@@ -9,7 +9,9 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/config/configtls"
+	"go.opentelemetry.io/collector/exporter/exporterhelper"
 	"go.uber.org/multierr"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshaler"
@@ -153,6 +155,11 @@ type Config struct {
 
 	// Auth holds the configuration for NATS auth.
 	Auth AuthConfig `mapstructure:",squash"`
+
+	// BackOffConfig holds the configuration for retries on failure.
+	configretry.BackOffConfig `mapstructure:"retry_on_failure"`
+	// QueueBatchConfig holds the configuration for sending queues.
+	exporterhelper.QueueBatchConfig `mapstructure:"sending_queue"`
 
 	// Prevent unkeyed literal initialization
 	_ struct{}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
@@ -52,7 +53,9 @@ func createDefaultConfig() component.Config {
 			Subject:              defaultTracesSubject,
 			BuiltinMarshalerName: defaultTracesMarshaler,
 		},
-		Auth: AuthConfig{},
+		Auth:             AuthConfig{},
+		BackOffConfig:    configretry.NewDefaultBackOffConfig(),
+		QueueBatchConfig: exporterhelper.NewDefaultQueueConfig(),
 	}
 }
 
@@ -61,7 +64,9 @@ func createLogsExporter(
 	set exporter.Settings,
 	cfg component.Config,
 ) (exporter.Logs, error) {
-	exporter, err := newNatsCoreLogsExporter(set, cfg.(*Config))
+	natsCfg := cfg.(*Config)
+
+	exporter, err := newNatsCoreLogsExporter(set, natsCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +78,8 @@ func createLogsExporter(
 		exporter.export,
 		exporterhelper.WithStart(exporter.start),
 		exporterhelper.WithShutdown(exporter.shutdown),
+		exporterhelper.WithQueueBatch(natsCfg.QueueBatchConfig, exporterhelper.NewLogsQueueBatchSettings()),
+		exporterhelper.WithRetry(natsCfg.BackOffConfig),
 	)
 }
 
@@ -81,7 +88,9 @@ func createMetricsExporter(
 	set exporter.Settings,
 	cfg component.Config,
 ) (exporter.Metrics, error) {
-	exporter, err := newNatsCoreMetricsExporter(set, cfg.(*Config))
+	natsCfg := cfg.(*Config)
+
+	exporter, err := newNatsCoreMetricsExporter(set, natsCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +102,8 @@ func createMetricsExporter(
 		exporter.export,
 		exporterhelper.WithStart(exporter.start),
 		exporterhelper.WithShutdown(exporter.shutdown),
+		exporterhelper.WithQueueBatch(natsCfg.QueueBatchConfig, exporterhelper.NewMetricsQueueBatchSettings()),
+		exporterhelper.WithRetry(natsCfg.BackOffConfig),
 	)
 }
 
@@ -101,7 +112,9 @@ func createTracesExporter(
 	set exporter.Settings,
 	cfg component.Config,
 ) (exporter.Traces, error) {
-	exporter, err := newNatsCoreTracesExporter(set, cfg.(*Config))
+	natsCfg := cfg.(*Config)
+
+	exporter, err := newNatsCoreTracesExporter(set, natsCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -113,5 +126,7 @@ func createTracesExporter(
 		exporter.export,
 		exporterhelper.WithStart(exporter.start),
 		exporterhelper.WithShutdown(exporter.shutdown),
+		exporterhelper.WithQueueBatch(natsCfg.QueueBatchConfig, exporterhelper.NewTracesQueueBatchSettings()),
+		exporterhelper.WithRetry(natsCfg.BackOffConfig),
 	)
 }
