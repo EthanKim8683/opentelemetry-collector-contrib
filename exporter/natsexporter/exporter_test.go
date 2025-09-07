@@ -1,4 +1,4 @@
-package natscoreexporter
+package natsexporter
 
 // import (
 // 	"context"
@@ -10,9 +10,9 @@ package natscoreexporter
 // 	"go.opentelemetry.io/collector/component/componenttest"
 // 	"go.opentelemetry.io/collector/exporter/exportertest"
 
-// 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natscoreexporter/internal/grouper"
-// 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natscoreexporter/internal/marshaler"
-// 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natscoreexporter/internal/metadata"
+// 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/grouper"
+// 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshaler"
+// 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/metadata"
 // )
 
 // type fakeGrouper struct{}

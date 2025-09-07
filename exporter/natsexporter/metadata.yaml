@@ -1,4 +1,4 @@
-type: natscore
+type: nats
 
 status:
   class: exporter

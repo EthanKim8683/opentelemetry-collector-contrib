@@ -1,4 +1,4 @@
-natscore:
+nats:
   endpoint: nats://localhost:1234
   logs:
     subject: "\"logs\""

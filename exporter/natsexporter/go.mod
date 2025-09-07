@@ -1,4 +1,4 @@
-module github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natscoreexporter
+module github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter
 
 go 1.24.5
 

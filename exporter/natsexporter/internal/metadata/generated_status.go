@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	Type      = component.MustNewType("natscore")
-	ScopeName = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natscoreexporter"
+	Type      = component.MustNewType("nats")
+	ScopeName = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter"
 )
 
 const (
