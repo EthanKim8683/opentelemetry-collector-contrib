@@ -11,6 +11,10 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
+type MarshalFunc[T any] func(data T) ([]byte, error)
+
+type PickFunc[T any] func(genericMarshaler GenericMarshaler) (MarshalFunc[T], error)
+
 func PickMarshalLogs(genericMarshaler GenericMarshaler) (MarshalFunc[plog.Logs], error) {
 	logsMarshaler, ok := genericMarshaler.(plog.Marshaler)
 	if !ok {

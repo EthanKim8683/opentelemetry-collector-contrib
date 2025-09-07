@@ -5,16 +5,6 @@ package marshaler // import "github.com/open-telemetry/opentelemetry-collector-c
 
 import "go.opentelemetry.io/collector/component"
 
-type GenericMarshaler any
-
-type Resolver interface {
-	Resolve(host component.Host) (GenericMarshaler, error)
-}
-
-type MarshalFunc[T any] func(data T) ([]byte, error)
-
-type PickFunc[T any] func(genericMarshaler GenericMarshaler) (MarshalFunc[T], error)
-
 type Marshaler[T any] struct {
 	resolver Resolver
 	pick     PickFunc[T]

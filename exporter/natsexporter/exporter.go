@@ -6,13 +6,8 @@ package natsexporter // import "github.com/open-telemetry/opentelemetry-collecto
 import (
 	"context"
 	"errors"
-	"os"
 
-	"github.com/nats-io/jwt/v2"
-	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nkeys"
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -21,6 +16,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/grouper"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshaler"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/publisher"
 )
 
 type natsExporter[T any] struct {
@@ -28,7 +24,7 @@ type natsExporter[T any] struct {
 	cfg       *Config
 	grouper   grouper.Grouper[T]
 	marshaler marshaler.Marshaler[T]
-	conn      *nats.Conn
+	publisher publisher.Publisher
 }
 
 func newNatsExporter[T any](
@@ -45,114 +41,10 @@ func newNatsExporter[T any](
 	}
 }
 
-func setNatsTLSOption(options *nats.Options, ctx context.Context, cfg *configtls.ClientConfig) error {
-	tlsConfig, err := cfg.LoadTLSConfig(ctx)
-	if err != nil {
-		return err
-	}
-	options.TLSConfig = tlsConfig
-	return nil
-}
-
-func setNatsTokenOption(options *nats.Options, cfg *TokenConfig) {
-	options.Token = cfg.Token
-}
-
-func setNatsUserOption(options *nats.Options, cfg *UserConfig) {
-	options.User = cfg.Username
-	options.Password = cfg.Password
-}
-
-func setNatsNkeyOption(options *nats.Options, cfg *NkeyConfig) error {
-	keyPair, err := nkeys.FromSeed(cfg.Seed)
-	if err != nil {
-		return err
-	}
-
-	options.Nkey = cfg.PublicKey
-	options.SignatureCB = keyPair.Sign
-	return nil
-}
-
-func setNatsNkeyJWTOption(options *nats.Options, cfg *NkeyJWTConfig) error {
-	keyPair, err := nkeys.FromSeed(cfg.Seed)
-	if err != nil {
-		return err
-	}
-
-	options.UserJWT = func() (string, error) {
-		return cfg.JWT, nil
-	}
-	options.SignatureCB = keyPair.Sign
-	return nil
-}
-
-func setNatsNkeyUserFileOption(options *nats.Options, cfg *NkeyUserFileConfig) error {
+func (e *natsExporter[T]) start(_ context.Context, host component.Host) error {
 	var errs error
-	userConfig, err := os.ReadFile(cfg.UserFilePath)
-	errs = multierr.Append(errs, err)
-	userJWT, err := jwt.ParseDecoratedJWT(userConfig)
-	errs = multierr.Append(errs, err)
-	keyPair, err := jwt.ParseDecoratedNKey(userConfig)
-	errs = multierr.Append(errs, err)
-	if errs != nil {
-		return errs
-	}
-
-	options.UserJWT = func() (string, error) {
-		return userJWT, nil
-	}
-	options.SignatureCB = keyPair.Sign
-	return nil
-}
-
-func setNatsAuthOption(options *nats.Options, cfg *AuthConfig) error {
-	var errs error
-	if cfg.User != nil {
-		setNatsUserOption(options, cfg.User)
-	}
-	if cfg.Token != nil {
-		setNatsTokenOption(options, cfg.Token)
-	}
-	if cfg.Nkey != nil {
-		errs = multierr.Append(errs, setNatsNkeyOption(options, cfg.Nkey))
-	}
-	if cfg.NkeyJWT != nil {
-		errs = multierr.Append(errs, setNatsNkeyJWTOption(options, cfg.NkeyJWT))
-	}
-	if cfg.NkeyUserFile != nil {
-		errs = multierr.Append(errs, setNatsNkeyUserFileOption(options, cfg.NkeyUserFile))
-	}
-	return errs
-}
-
-func createNats(ctx context.Context, cfg *Config) (*nats.Conn, error) {
-	var errs error
-	options := nats.GetDefaultOptions()
-	options.Url = cfg.Endpoint
-	options.Pedantic = cfg.Pedantic
-	errs = multierr.Append(errs, setNatsTLSOption(&options, ctx, &cfg.TLS))
-	errs = multierr.Append(errs, setNatsAuthOption(&options, &cfg.Auth))
-	if errs != nil {
-		return nil, errs
-	}
-
-	conn, err := options.Connect()
-	if err != nil {
-		return nil, err
-	}
-	return conn, nil
-}
-
-func (e *natsExporter[T]) start(ctx context.Context, host component.Host) error {
-	var errs error
-
 	errs = multierr.Append(errs, e.marshaler.Resolve(host))
-
-	conn, err := createNats(ctx, e.cfg)
-	errs = multierr.Append(errs, err)
-	e.conn = conn
-
+	errs = multierr.Append(errs, e.publisher.Start())
 	return errs
 }
 
@@ -169,7 +61,7 @@ func (e *natsExporter[T]) export(ctx context.Context, data T) error {
 			continue
 		}
 
-		err = e.conn.Publish(group.Subject, bytes)
+		err = e.publisher.Publish(ctx, group.Subject, bytes)
 		if err != nil {
 			errs = multierr.Append(errs, err)
 		}
@@ -178,8 +70,7 @@ func (e *natsExporter[T]) export(ctx context.Context, data T) error {
 }
 
 func (e *natsExporter[T]) shutdown(_ context.Context) error {
-	e.conn.Close()
-	return nil
+	return e.publisher.Shutdown()
 }
 
 func createResolver(cfg *SignalConfig) (marshaler.Resolver, error) {

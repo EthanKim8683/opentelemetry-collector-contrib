@@ -19,6 +19,12 @@ const (
 	OtlpJSONBuiltinMarshalerName  BuiltinMarshalerName = "otlp_json"
 )
 
+type GenericMarshaler any
+
+type Resolver interface {
+	Resolve(host component.Host) (GenericMarshaler, error)
+}
+
 type genericBuiltinMarshaler struct {
 	logsMarshaler    plog.Marshaler
 	metricsMarshaler pmetric.Marshaler
