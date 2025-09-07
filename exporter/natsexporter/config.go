@@ -135,7 +135,7 @@ type AuthConfig struct {
 	_ struct{}
 }
 
-// Config defines the configuration for the NATS core exporter.
+// Config defines the configuration for the NATS exporter.
 type Config struct {
 	// Endpoint is the NATS server URL.
 	Endpoint string `mapstructure:"endpoint"`

@@ -3,5 +3,5 @@
 
 //go:generate mdatagen metadata.yaml
 
-// Package natsexporter exports signals to a NATS Core server.
+// Package natsexporter exports signals to a NATS server.
 package natsexporter // import "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter"

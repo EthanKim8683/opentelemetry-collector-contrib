@@ -23,7 +23,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshaler"
 )
 
-type natsCoreExporter[T any] struct {
+type natsExporter[T any] struct {
 	set       exporter.Settings
 	cfg       *Config
 	grouper   grouper.Grouper[T]
@@ -31,13 +31,13 @@ type natsCoreExporter[T any] struct {
 	conn      *nats.Conn
 }
 
-func newNatsCoreExporter[T any](
+func newNatsExporter[T any](
 	set exporter.Settings,
 	cfg *Config,
 	grouper grouper.Grouper[T],
 	marshaler marshaler.Marshaler[T],
-) *natsCoreExporter[T] {
-	return &natsCoreExporter[T]{
+) *natsExporter[T] {
+	return &natsExporter[T]{
 		set:       set,
 		cfg:       cfg,
 		grouper:   grouper,
@@ -144,7 +144,7 @@ func createNats(ctx context.Context, cfg *Config) (*nats.Conn, error) {
 	return conn, nil
 }
 
-func (e *natsCoreExporter[T]) start(ctx context.Context, host component.Host) error {
+func (e *natsExporter[T]) start(ctx context.Context, host component.Host) error {
 	var errs error
 
 	errs = multierr.Append(errs, e.marshaler.Resolve(host))
@@ -156,7 +156,7 @@ func (e *natsCoreExporter[T]) start(ctx context.Context, host component.Host) er
 	return errs
 }
 
-func (e *natsCoreExporter[T]) export(ctx context.Context, data T) error {
+func (e *natsExporter[T]) export(ctx context.Context, data T) error {
 	var errs error
 
 	groups, err := e.grouper.Group(ctx, data)
@@ -177,7 +177,7 @@ func (e *natsCoreExporter[T]) export(ctx context.Context, data T) error {
 	return errs
 }
 
-func (e *natsCoreExporter[T]) shutdown(_ context.Context) error {
+func (e *natsExporter[T]) shutdown(_ context.Context) error {
 	e.conn.Close()
 	return nil
 }
@@ -192,7 +192,7 @@ func createResolver(cfg *SignalConfig) (marshaler.Resolver, error) {
 	}
 }
 
-func newNatsCoreLogsExporter(set exporter.Settings, cfg *Config) (*natsCoreExporter[plog.Logs], error) {
+func newNatsLogsExporter(set exporter.Settings, cfg *Config) (*natsExporter[plog.Logs], error) {
 	var errs error
 
 	grouper, err := grouper.NewLogsGrouper(cfg.Logs.Subject, set.TelemetrySettings)
@@ -202,10 +202,10 @@ func newNatsCoreLogsExporter(set exporter.Settings, cfg *Config) (*natsCoreExpor
 	errs = multierr.Append(errs, err)
 	marshaler := marshaler.NewMarshaler(resolver, marshaler.PickMarshalLogs)
 
-	return newNatsCoreExporter(set, cfg, grouper, marshaler), errs
+	return newNatsExporter(set, cfg, grouper, marshaler), errs
 }
 
-func newNatsCoreMetricsExporter(set exporter.Settings, cfg *Config) (*natsCoreExporter[pmetric.Metrics], error) {
+func newNatsMetricsExporter(set exporter.Settings, cfg *Config) (*natsExporter[pmetric.Metrics], error) {
 	var errs error
 
 	grouper, err := grouper.NewMetricsGrouper(cfg.Metrics.Subject, set.TelemetrySettings)
@@ -215,10 +215,10 @@ func newNatsCoreMetricsExporter(set exporter.Settings, cfg *Config) (*natsCoreEx
 	errs = multierr.Append(errs, err)
 	marshaler := marshaler.NewMarshaler(resolver, marshaler.PickMarshalMetrics)
 
-	return newNatsCoreExporter(set, cfg, grouper, marshaler), errs
+	return newNatsExporter(set, cfg, grouper, marshaler), errs
 }
 
-func newNatsCoreTracesExporter(set exporter.Settings, cfg *Config) (*natsCoreExporter[ptrace.Traces], error) {
+func newNatsTracesExporter(set exporter.Settings, cfg *Config) (*natsExporter[ptrace.Traces], error) {
 	var errs error
 
 	grouper, err := grouper.NewTracesGrouper(cfg.Traces.Subject, set.TelemetrySettings)
@@ -228,5 +228,5 @@ func newNatsCoreTracesExporter(set exporter.Settings, cfg *Config) (*natsCoreExp
 	errs = multierr.Append(errs, err)
 	marshaler := marshaler.NewMarshaler(resolver, marshaler.PickMarshalTraces)
 
-	return newNatsCoreExporter(set, cfg, grouper, marshaler), errs
+	return newNatsExporter(set, cfg, grouper, marshaler), errs
 }

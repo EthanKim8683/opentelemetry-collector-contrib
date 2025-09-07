@@ -66,7 +66,7 @@ func createLogsExporter(
 ) (exporter.Logs, error) {
 	natsCfg := cfg.(*Config)
 
-	exporter, err := newNatsCoreLogsExporter(set, natsCfg)
+	exporter, err := newNatsLogsExporter(set, natsCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func createMetricsExporter(
 ) (exporter.Metrics, error) {
 	natsCfg := cfg.(*Config)
 
-	exporter, err := newNatsCoreMetricsExporter(set, natsCfg)
+	exporter, err := newNatsMetricsExporter(set, natsCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func createTracesExporter(
 ) (exporter.Traces, error) {
 	natsCfg := cfg.(*Config)
 
-	exporter, err := newNatsCoreTracesExporter(set, natsCfg)
+	exporter, err := newNatsTracesExporter(set, natsCfg)
 	if err != nil {
 		return nil, err
 	}
