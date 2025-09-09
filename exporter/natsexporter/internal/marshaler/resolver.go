@@ -66,6 +66,10 @@ type builtinMarshalerResolverConfig struct {
 }
 
 func (c *builtinMarshalerResolverConfig) Validate() error {
+	if c.builtinMarshalerResolver != nil {
+		return nil
+	}
+
 	var genericMarshaler GenericMarshaler
 	switch c.builtinMarshalerName {
 	case OtlpProtoBuiltinMarshalerName:
@@ -117,6 +121,10 @@ type encodingExtensionResolverConfig struct {
 }
 
 func (c *encodingExtensionResolverConfig) Validate() error {
+	if c.encodingExtensionResolver != nil {
+		return nil
+	}
+
 	var id component.ID
 	if err := id.UnmarshalText(c.encodingExtensionName); err != nil {
 		return fmt.Errorf("failed to unmarshal encoding extension name: %w", err)
@@ -142,6 +150,10 @@ type ResolverConfig struct {
 }
 
 func (c *ResolverConfig) Validate() error {
+	if c.resolver != nil {
+		return nil
+	}
+
 	if c.builtinMarshalerResolverConfig != nil &&
 		c.encodingExtensionResolverConfig != nil {
 		return errors.New("marshaler configured more than once")
@@ -155,6 +167,7 @@ func (c *ResolverConfig) Validate() error {
 	} else {
 		return errors.New("marshaler not configured")
 	}
+
 	if err := resolverConfig.Validate(); err != nil {
 		return err
 	}

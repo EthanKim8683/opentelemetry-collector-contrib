@@ -117,8 +117,12 @@ type LogsGrouperConfig struct {
 }
 
 func (c *LogsGrouperConfig) Validate() error {
+	if c.logsGrouper != nil {
+		return nil
+	}
+
 	if c.Subject == nil {
-		return errors.New("subject not configured")
+		return errors.New("logs subject not configured")
 	}
 
 	parser, err := ottllog.NewParser(

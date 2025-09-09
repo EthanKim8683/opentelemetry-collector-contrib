@@ -119,8 +119,12 @@ type MetricsGrouperConfig struct {
 }
 
 func (c *MetricsGrouperConfig) Validate() error {
+	if c.metricsGrouper != nil {
+		return nil
+	}
+
 	if c.Subject == nil {
-		return errors.New("subject not configured")
+		return errors.New("metrics subject not configured")
 	}
 
 	parser, err := ottlmetric.NewParser(
@@ -143,7 +147,7 @@ func (c *MetricsGrouperConfig) Validate() error {
 }
 
 func NewDefaultMetricsGrouperConfig() MetricsGrouperConfig {
-	subject := "\"otel_logs\""
+	subject := "\"otel_metrics\""
 	return MetricsGrouperConfig{
 		Subject: &subject,
 	}

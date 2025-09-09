@@ -117,8 +117,12 @@ type TracesGrouperConfig struct {
 }
 
 func (c *TracesGrouperConfig) Validate() error {
+	if c.tracesGrouper != nil {
+		return nil
+	}
+
 	if c.Subject == nil {
-		return errors.New("subject not configured")
+		return errors.New("traces subject not configured")
 	}
 
 	parser, err := ottlspan.NewParser(
@@ -141,7 +145,7 @@ func (c *TracesGrouperConfig) Validate() error {
 }
 
 func NewDefaultTracesGrouperConfig() TracesGrouperConfig {
-	subject := "\"otel_logs\""
+	subject := "\"otel_traces\""
 	return TracesGrouperConfig{
 		Subject: &subject,
 	}
