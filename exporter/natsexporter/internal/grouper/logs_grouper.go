@@ -111,7 +111,7 @@ func (g *logsGrouper) Group(ctx context.Context, srcLogs plog.Logs) ([]Group[plo
 var _ Grouper[plog.Logs] = (*logsGrouper)(nil)
 
 type LogsGrouperConfig struct {
-	Subject *string `mapstructure:"subject"`
+	Subject string `mapstructure:"subject"`
 
 	logsGrouper *logsGrouper
 }
@@ -119,10 +119,6 @@ type LogsGrouperConfig struct {
 func (c *LogsGrouperConfig) Validate() error {
 	if c.logsGrouper != nil {
 		return nil
-	}
-
-	if c.Subject == nil {
-		return errors.New("logs subject not configured")
 	}
 
 	parser, err := ottllog.NewParser(
@@ -133,7 +129,7 @@ func (c *LogsGrouperConfig) Validate() error {
 		return fmt.Errorf("failed to create logs parser: %w", err)
 	}
 
-	valueExpression, err := parser.ParseValueExpression(*c.Subject)
+	valueExpression, err := parser.ParseValueExpression(c.Subject)
 	if err != nil {
 		return fmt.Errorf("failed to parse logs subject: %w", err)
 	}
@@ -145,9 +141,8 @@ func (c *LogsGrouperConfig) Validate() error {
 }
 
 func NewDefaultLogsGrouperConfig() LogsGrouperConfig {
-	subject := "\"otel_logs\""
 	return LogsGrouperConfig{
-		Subject: &subject,
+		Subject: "\"otel_logs\"",
 	}
 }
 

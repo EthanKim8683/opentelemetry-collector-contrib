@@ -113,7 +113,7 @@ func (g *metricsGrouper) Group(ctx context.Context, srcMetrics pmetric.Metrics) 
 var _ Grouper[pmetric.Metrics] = (*metricsGrouper)(nil)
 
 type MetricsGrouperConfig struct {
-	Subject *string `mapstructure:"subject"`
+	Subject string `mapstructure:"subject"`
 
 	metricsGrouper *metricsGrouper
 }
@@ -121,10 +121,6 @@ type MetricsGrouperConfig struct {
 func (c *MetricsGrouperConfig) Validate() error {
 	if c.metricsGrouper != nil {
 		return nil
-	}
-
-	if c.Subject == nil {
-		return errors.New("metrics subject not configured")
 	}
 
 	parser, err := ottlmetric.NewParser(
@@ -135,7 +131,7 @@ func (c *MetricsGrouperConfig) Validate() error {
 		return fmt.Errorf("failed to create metrics parser: %w", err)
 	}
 
-	valueExpression, err := parser.ParseValueExpression(*c.Subject)
+	valueExpression, err := parser.ParseValueExpression(c.Subject)
 	if err != nil {
 		return fmt.Errorf("failed to parse metrics subject: %w", err)
 	}
@@ -147,9 +143,8 @@ func (c *MetricsGrouperConfig) Validate() error {
 }
 
 func NewDefaultMetricsGrouperConfig() MetricsGrouperConfig {
-	subject := "\"otel_metrics\""
 	return MetricsGrouperConfig{
-		Subject: &subject,
+		Subject: "\"otel_metrics\"",
 	}
 }
 

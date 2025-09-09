@@ -113,7 +113,7 @@ func TestLogsGrouper(t *testing.T) {
 				require.NoError(t, err)
 
 				cfg := &LogsGrouperConfig{
-					Subject: &subject,
+					Subject: subject,
 				}
 				logsGrouper, err := NewLogsGrouper(cfg, componenttest.NewNopTelemetrySettings())
 				assert.NoError(t, err)

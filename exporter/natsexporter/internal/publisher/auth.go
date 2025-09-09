@@ -206,3 +206,7 @@ func (c *AuthConfig) Validate() error {
 	}
 	return nil
 }
+
+func NewDefaultAuthConfig() AuthConfig {
+	return AuthConfig{}
+}

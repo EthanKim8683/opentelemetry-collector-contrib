@@ -111,7 +111,7 @@ func (g *tracesGrouper) Group(ctx context.Context, srcTraces ptrace.Traces) ([]G
 var _ Grouper[ptrace.Traces] = (*tracesGrouper)(nil)
 
 type TracesGrouperConfig struct {
-	Subject *string `mapstructure:"subject"`
+	Subject string `mapstructure:"subject"`
 
 	tracesGrouper *tracesGrouper
 }
@@ -121,7 +121,7 @@ func (c *TracesGrouperConfig) Validate() error {
 		return nil
 	}
 
-	if c.Subject == nil {
+	if c.Subject == "" {
 		return errors.New("traces subject not configured")
 	}
 
@@ -133,7 +133,7 @@ func (c *TracesGrouperConfig) Validate() error {
 		return fmt.Errorf("failed to create traces parser: %w", err)
 	}
 
-	valueExpression, err := parser.ParseValueExpression(*c.Subject)
+	valueExpression, err := parser.ParseValueExpression(c.Subject)
 	if err != nil {
 		return fmt.Errorf("failed to parse traces subject: %w", err)
 	}
@@ -145,9 +145,8 @@ func (c *TracesGrouperConfig) Validate() error {
 }
 
 func NewDefaultTracesGrouperConfig() TracesGrouperConfig {
-	subject := "\"otel_traces\""
 	return TracesGrouperConfig{
-		Subject: &subject,
+		Subject: "\"otel_traces\"",
 	}
 }
 

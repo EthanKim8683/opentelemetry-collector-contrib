@@ -143,8 +143,8 @@ func (c *encodingExtensionResolverConfig) resolver() Resolver {
 var _ resolverConfig = (*encodingExtensionResolverConfig)(nil)
 
 type ResolverConfig struct {
-	builtinMarshalerResolverConfig  *builtinMarshalerResolverConfig
-	encodingExtensionResolverConfig *encodingExtensionResolverConfig
+	builtinMarshalerResolverConfig  *builtinMarshalerResolverConfig  `mapstructure:",squash"`
+	encodingExtensionResolverConfig *encodingExtensionResolverConfig `mapstructure:",squash"`
 
 	resolver Resolver
 }
@@ -154,16 +154,11 @@ func (c *ResolverConfig) Validate() error {
 		return nil
 	}
 
-	if c.builtinMarshalerResolverConfig != nil &&
-		c.encodingExtensionResolverConfig != nil {
-		return errors.New("marshaler configured more than once")
-	}
-
 	var resolverConfig resolverConfig
-	if c.builtinMarshalerResolverConfig != nil {
-		resolverConfig = c.builtinMarshalerResolverConfig
-	} else if c.encodingExtensionResolverConfig != nil {
+	if c.encodingExtensionResolverConfig != nil {
 		resolverConfig = c.encodingExtensionResolverConfig
+	} else if c.builtinMarshalerResolverConfig != nil {
+		resolverConfig = c.builtinMarshalerResolverConfig
 	} else {
 		return errors.New("marshaler not configured")
 	}
