@@ -140,7 +140,7 @@ func (c *TracesGrouperConfig) Validate() error {
 	return nil
 }
 
-func (c *TracesGrouperConfig) NewDefaultTracesGrouperConfig() TracesGrouperConfig {
+func NewDefaultTracesGrouperConfig() TracesGrouperConfig {
 	subject := "\"otel_logs\""
 	return TracesGrouperConfig{
 		Subject: &subject,

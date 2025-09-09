@@ -142,7 +142,7 @@ func (c *MetricsGrouperConfig) Validate() error {
 	return nil
 }
 
-func (c *MetricsGrouperConfig) NewDefaultMetricsGrouperConfig() MetricsGrouperConfig {
+func NewDefaultMetricsGrouperConfig() MetricsGrouperConfig {
 	subject := "\"otel_logs\""
 	return MetricsGrouperConfig{
 		Subject: &subject,

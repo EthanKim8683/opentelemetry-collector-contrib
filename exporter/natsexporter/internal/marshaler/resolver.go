@@ -163,6 +163,14 @@ func (c *ResolverConfig) Validate() error {
 	return nil
 }
 
+func NewDefaultResolverConfig() ResolverConfig {
+	return ResolverConfig{
+		builtinMarshalerResolverConfig: &builtinMarshalerResolverConfig{
+			builtinMarshalerName: OtlpProtoBuiltinMarshalerName,
+		},
+	}
+}
+
 func NewResolver(cfg *ResolverConfig) (Resolver, error) {
 	if cfg.resolver == nil {
 		if err := cfg.Validate(); err != nil {

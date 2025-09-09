@@ -140,7 +140,7 @@ func (c *LogsGrouperConfig) Validate() error {
 	return nil
 }
 
-func (c *LogsGrouperConfig) NewDefaultLogsGrouperConfig() LogsGrouperConfig {
+func NewDefaultLogsGrouperConfig() LogsGrouperConfig {
 	subject := "\"otel_logs\""
 	return LogsGrouperConfig{
 		Subject: &subject,
