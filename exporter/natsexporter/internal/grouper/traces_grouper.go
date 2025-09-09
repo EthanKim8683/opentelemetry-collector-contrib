@@ -6,8 +6,10 @@ package grouper // import "github.com/open-telemetry/opentelemetry-collector-con
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/multierr"
 
@@ -108,21 +110,48 @@ func (g *tracesGrouper) Group(ctx context.Context, srcTraces ptrace.Traces) ([]G
 
 var _ Grouper[ptrace.Traces] = (*tracesGrouper)(nil)
 
-func NewTracesGrouper(subject string, telemetrySettings component.TelemetrySettings) (*tracesGrouper, error) {
+type TracesGrouperConfig struct {
+	Subject *string `mapstructure:"subject"`
+
+	tracesGrouper *tracesGrouper
+}
+
+func (c *TracesGrouperConfig) Validate() error {
+	if c.Subject == nil {
+		return errors.New("subject not configured")
+	}
+
 	parser, err := ottlspan.NewParser(
 		ottlfuncs.StandardConverters[ottlspan.TransformContext](),
-		telemetrySettings,
+		componenttest.NewNopTelemetrySettings(),
 	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to create traces parser: %w", err)
 	}
 
-	valueExpression, err := parser.ParseValueExpression(subject)
+	valueExpression, err := parser.ParseValueExpression(*c.Subject)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to parse traces subject: %w", err)
 	}
 
-	return &tracesGrouper{
+	c.tracesGrouper = &tracesGrouper{
 		valueExpression: valueExpression,
-	}, nil
+	}
+	return nil
+}
+
+func (c *TracesGrouperConfig) NewDefaultTracesGrouperConfig() TracesGrouperConfig {
+	subject := "\"otel_logs\""
+	return TracesGrouperConfig{
+		Subject: &subject,
+	}
+}
+
+func NewTracesGrouper(cfg *TracesGrouperConfig, telemetrySettings component.TelemetrySettings) (*tracesGrouper, error) {
+	if cfg.tracesGrouper == nil {
+		if err := cfg.Validate(); err != nil {
+			return nil, err
+		}
+	}
+	return cfg.tracesGrouper, nil
 }

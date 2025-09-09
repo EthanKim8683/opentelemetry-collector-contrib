@@ -113,7 +113,10 @@ func TestMetricsGrouper(t *testing.T) {
 				srcMetrics, err := golden.ReadMetrics(filepath.Join(testCaseDir, "metrics.yaml"))
 				require.NoError(t, err)
 
-				metricsGrouper, err := NewMetricsGrouper(subject, componenttest.NewNopTelemetrySettings())
+				cfg := &MetricsGrouperConfig{
+					Subject: &subject,
+				}
+				metricsGrouper, err := NewMetricsGrouper(cfg, componenttest.NewNopTelemetrySettings())
 				assert.NoError(t, err)
 
 				haveGroups, haveErr := metricsGrouper.Group(t.Context(), srcMetrics)

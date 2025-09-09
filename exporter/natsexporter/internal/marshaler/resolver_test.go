@@ -51,7 +51,12 @@ func TestBuiltinMarshalerResolver(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resolver, err := NewBuiltinMarshalerResolver(tt.builtinMarshalerName)
+			cfg := &ResolverConfig{
+				builtinMarshalerResolverConfig: &builtinMarshalerResolverConfig{
+					builtinMarshalerName: tt.builtinMarshalerName,
+				},
+			}
+			resolver, err := NewResolver(cfg)
 			if tt.wantError != nil {
 				assert.ErrorContains(t, err, tt.wantError.Error())
 			} else {
@@ -60,18 +65,18 @@ func TestBuiltinMarshalerResolver(t *testing.T) {
 				genericMarshaler, err := resolver.Resolve(componenttest.NewNopHost())
 				assert.NoError(t, err)
 
-				genericBuiltinMarshaler, ok := genericMarshaler.(*genericBuiltinMarshaler)
+				builtinMarshaler, ok := genericMarshaler.(*builtinMarshaler)
 				assert.True(t, ok)
 
 				logs := testdata.GenerateLogs(10)
 				metrics := testdata.GenerateMetrics(10)
 				traces := testdata.GenerateTraces(10)
 
-				haveEncodedLogs, err := genericBuiltinMarshaler.MarshalLogs(logs)
+				haveEncodedLogs, err := builtinMarshaler.MarshalLogs(logs)
 				assert.NoError(t, err)
-				haveEncodedMetrics, err := genericBuiltinMarshaler.MarshalMetrics(metrics)
+				haveEncodedMetrics, err := builtinMarshaler.MarshalMetrics(metrics)
 				assert.NoError(t, err)
-				haveEncodedTraces, err := genericBuiltinMarshaler.MarshalTraces(traces)
+				haveEncodedTraces, err := builtinMarshaler.MarshalTraces(traces)
 				assert.NoError(t, err)
 
 				wantEncodedLogs, err := tt.wantLogsMarshaler.MarshalLogs(logs)
@@ -116,7 +121,12 @@ func TestEncodingExtensionResolver(t *testing.T) {
 	}
 
 	t.Run("resolves extension if found", func(t *testing.T) {
-		resolver, err := NewEncodingExtensionResolver("extension")
+		cfg := &ResolverConfig{
+			encodingExtensionResolverConfig: &encodingExtensionResolverConfig{
+				encodingExtensionName: []byte("extension"),
+			},
+		}
+		resolver, err := NewResolver(cfg)
 		assert.NoError(t, err)
 
 		extension, err := resolver.Resolve(host)
@@ -125,7 +135,12 @@ func TestEncodingExtensionResolver(t *testing.T) {
 	})
 
 	t.Run("returns error if extension not found", func(t *testing.T) {
-		resolver, err := NewEncodingExtensionResolver("missing")
+		cfg := &ResolverConfig{
+			encodingExtensionResolverConfig: &encodingExtensionResolverConfig{
+				encodingExtensionName: []byte("missing"),
+			},
+		}
+		resolver, err := NewResolver(cfg)
 		assert.NoError(t, err)
 
 		_, err = resolver.Resolve(host)
