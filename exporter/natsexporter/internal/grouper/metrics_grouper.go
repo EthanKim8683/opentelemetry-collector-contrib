@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/multierr"
 
@@ -42,26 +41,26 @@ func (g *metricsGrouper) Group(ctx context.Context, srcMetrics pmetric.Metrics) 
 			var (
 				srcScope       = srcScopeMetrics.Scope()
 				srcScopeSchema = srcScopeMetrics.SchemaUrl()
-				srcMetricSlice = srcScopeMetrics.Metrics()
+				srcMetrics     = srcScopeMetrics.Metrics()
 			)
 
-			for _, srcMetric := range srcMetricSlice.All() {
+			for _, srcMetric := range srcMetrics.All() {
 				subjectAsAny, err := g.valueExpression.Eval(ctx, ottlmetric.NewTransformContext(
 					srcMetric,
-					srcMetricSlice,
+					srcMetrics,
 					srcScope,
 					srcResource,
 					srcScopeMetrics,
 					srcResourceMetrics,
 				))
 				if err != nil {
-					errs = multierr.Append(errs, err)
+					errs = multierr.Append(errs, errors.New("failed to evaluate metrics subject expression"))
 					continue
 				}
 
 				subject, ok := subjectAsAny.(string)
 				if !ok {
-					errs = multierr.Append(errs, errors.New("subject is not a string"))
+					errs = multierr.Append(errs, errors.New("constructed metrics subject is not a string"))
 					continue
 				}
 
@@ -112,47 +111,21 @@ func (g *metricsGrouper) Group(ctx context.Context, srcMetrics pmetric.Metrics) 
 
 var _ Grouper[pmetric.Metrics] = (*metricsGrouper)(nil)
 
-type MetricsGrouperConfig struct {
-	Subject string `mapstructure:"subject"`
-
-	metricsGrouper *metricsGrouper
-}
-
-func (c *MetricsGrouperConfig) Validate() error {
-	if c.metricsGrouper != nil {
-		return nil
-	}
-
+func newMetricsGrouper(subject string, telemetrySettings component.TelemetrySettings) (Grouper[pmetric.Metrics], error) {
 	parser, err := ottlmetric.NewParser(
 		ottlfuncs.StandardConverters[ottlmetric.TransformContext](),
-		componenttest.NewNopTelemetrySettings(),
+		telemetrySettings,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create metrics parser: %w", err)
+		return nil, fmt.Errorf("failed to create parser for metrics subject expression: %w", err)
 	}
 
-	valueExpression, err := parser.ParseValueExpression(c.Subject)
+	valueExpression, err := parser.ParseValueExpression(subject)
 	if err != nil {
-		return fmt.Errorf("failed to parse metrics subject: %w", err)
+		return nil, fmt.Errorf("failed to parse metrics subject expression: %w", err)
 	}
 
-	c.metricsGrouper = &metricsGrouper{
+	return &metricsGrouper{
 		valueExpression: valueExpression,
-	}
-	return nil
-}
-
-func NewDefaultMetricsGrouperConfig() MetricsGrouperConfig {
-	return MetricsGrouperConfig{
-		Subject: "\"otel_metrics\"",
-	}
-}
-
-func NewMetricsGrouper(cfg *MetricsGrouperConfig, telemetrySettings component.TelemetrySettings) (*metricsGrouper, error) {
-	if cfg.metricsGrouper == nil {
-		if err := cfg.Validate(); err != nil {
-			return nil, err
-		}
-	}
-	return cfg.metricsGrouper, nil
+	}, nil
 }

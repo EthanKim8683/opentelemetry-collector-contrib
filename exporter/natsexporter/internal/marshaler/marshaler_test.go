@@ -17,24 +17,24 @@ func (m *fakeGenericMarshaler) MarshalString(sd string) ([]byte, error) {
 	return []byte(sd), nil
 }
 
-var _ GenericMarshaler = (*fakeGenericMarshaler)(nil)
+var _ genericMarshaler = (*fakeGenericMarshaler)(nil)
 
 type fakeResolver struct{}
 
-func (r *fakeResolver) Resolve(host component.Host) (GenericMarshaler, error) {
+func (r *fakeResolver) resolve(host component.Host) (genericMarshaler, error) {
 	return &fakeGenericMarshaler{}, nil
 }
 
-var _ Resolver = (*fakeResolver)(nil)
+var _ resolver = (*fakeResolver)(nil)
 
-func fakePick(genericMarshaler GenericMarshaler) (MarshalFunc[string], error) {
+func fakePick(genericMarshaler genericMarshaler) (marshalFunc[string], error) {
 	return genericMarshaler.(*fakeGenericMarshaler).MarshalString, nil
 }
 
-var _ PickFunc[string] = fakePick
+var _ pickFunc[string] = fakePick
 
-func newMarshalerWithFakes() Marshaler[string] {
-	return NewMarshaler(&fakeResolver{}, fakePick)
+func newMarshalerWithFakes() *Marshaler[string] {
+	return newMarshaler(&fakeResolver{}, fakePick)
 }
 
 func TestMarshaler(t *testing.T) {

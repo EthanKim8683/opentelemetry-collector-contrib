@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.uber.org/multierr"
 
@@ -53,13 +52,13 @@ func (g *logsGrouper) Group(ctx context.Context, srcLogs plog.Logs) ([]Group[plo
 					srcResourceLogs,
 				))
 				if err != nil {
-					errs = multierr.Append(errs, err)
+					errs = multierr.Append(errs, errors.New("failed to evaluate logs subject expression"))
 					continue
 				}
 
 				subject, ok := subjectAsAny.(string)
 				if !ok {
-					errs = multierr.Append(errs, errors.New("subject is not a string"))
+					errs = multierr.Append(errs, errors.New("constructed logs subject is not a string"))
 					continue
 				}
 
@@ -110,47 +109,21 @@ func (g *logsGrouper) Group(ctx context.Context, srcLogs plog.Logs) ([]Group[plo
 
 var _ Grouper[plog.Logs] = (*logsGrouper)(nil)
 
-type LogsGrouperConfig struct {
-	Subject string `mapstructure:"subject"`
-
-	logsGrouper *logsGrouper
-}
-
-func (c *LogsGrouperConfig) Validate() error {
-	if c.logsGrouper != nil {
-		return nil
-	}
-
+func newLogsGrouper(subject string, telemetrySettings component.TelemetrySettings) (Grouper[plog.Logs], error) {
 	parser, err := ottllog.NewParser(
 		ottlfuncs.StandardConverters[ottllog.TransformContext](),
-		componenttest.NewNopTelemetrySettings(),
+		telemetrySettings,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create logs parser: %w", err)
+		return nil, fmt.Errorf("failed to create parser for logs subject expression: %w", err)
 	}
 
-	valueExpression, err := parser.ParseValueExpression(c.Subject)
+	valueExpression, err := parser.ParseValueExpression(subject)
 	if err != nil {
-		return fmt.Errorf("failed to parse logs subject: %w", err)
+		return nil, fmt.Errorf("failed to parse logs subject expression: %w", err)
 	}
 
-	c.logsGrouper = &logsGrouper{
+	return &logsGrouper{
 		valueExpression: valueExpression,
-	}
-	return nil
-}
-
-func NewDefaultLogsGrouperConfig() LogsGrouperConfig {
-	return LogsGrouperConfig{
-		Subject: "\"otel_logs\"",
-	}
-}
-
-func NewLogsGrouper(cfg *LogsGrouperConfig, telemetrySettings component.TelemetrySettings) (*logsGrouper, error) {
-	if cfg.logsGrouper == nil {
-		if err := cfg.Validate(); err != nil {
-			return nil, err
-		}
-	}
-	return cfg.logsGrouper, nil
+	}, nil
 }

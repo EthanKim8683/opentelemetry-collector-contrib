@@ -41,12 +41,12 @@ func groupTraces(t *testing.T, subject string, srcTraces ptrace.Traces) ([]Group
 			resourceSpans,
 		))
 		if err != nil {
-			return "", err
+			return "", errors.New("failed to evaluate traces subject expression")
 		}
 
 		subject, ok := subjectAsAny.(string)
 		if !ok {
-			return "", errors.New("subject is not a string")
+			return "", errors.New("constructed traces subject is not a string")
 		}
 		return subject, nil
 	}
@@ -112,10 +112,7 @@ func TestTracesGrouper(t *testing.T) {
 				srcTraces, err := golden.ReadTraces(filepath.Join(testCaseDir, "traces.yaml"))
 				require.NoError(t, err)
 
-				cfg := &TracesGrouperConfig{
-					Subject: subject,
-				}
-				tracesGrouper, err := NewTracesGrouper(cfg, componenttest.NewNopTelemetrySettings())
+				tracesGrouper, err := newTracesGrouper(subject, componenttest.NewNopTelemetrySettings())
 				assert.NoError(t, err)
 
 				haveGroups, haveErr := tracesGrouper.Group(t.Context(), srcTraces)

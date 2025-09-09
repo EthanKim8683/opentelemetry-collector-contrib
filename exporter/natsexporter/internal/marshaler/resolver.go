@@ -4,7 +4,6 @@
 package marshaler // import "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshaler"
 
 import (
-	"errors"
 	"fmt"
 
 	"go.opentelemetry.io/collector/component"
@@ -13,22 +12,10 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-type GenericMarshaler any
+type genericMarshaler any
 
-type BuiltinMarshalerName string
-
-const (
-	OtlpProtoBuiltinMarshalerName BuiltinMarshalerName = "otlp_proto"
-	OtlpJSONBuiltinMarshalerName  BuiltinMarshalerName = "otlp_json"
-)
-
-type Resolver interface {
-	Resolve(host component.Host) (GenericMarshaler, error)
-}
-
-type resolverConfig interface {
-	Validate() error
-	resolver() Resolver
+type resolver interface {
+	resolve(host component.Host) (genericMarshaler, error)
 }
 
 type builtinMarshaler struct {
@@ -50,28 +37,25 @@ func (g *builtinMarshaler) MarshalTraces(td ptrace.Traces) ([]byte, error) {
 }
 
 type builtinMarshalerResolver struct {
-	genericMarshaler GenericMarshaler
+	genericMarshaler genericMarshaler
 }
 
-func (r *builtinMarshalerResolver) Resolve(host component.Host) (GenericMarshaler, error) {
+func (r *builtinMarshalerResolver) resolve(host component.Host) (genericMarshaler, error) {
 	return r.genericMarshaler, nil
 }
 
-var _ Resolver = (*builtinMarshalerResolver)(nil)
+var _ resolver = (*builtinMarshalerResolver)(nil)
 
-type builtinMarshalerResolverConfig struct {
-	builtinMarshalerName BuiltinMarshalerName
+type BuiltinMarshalerName string
 
-	builtinMarshalerResolver *builtinMarshalerResolver
-}
+const (
+	OtlpProtoBuiltinMarshalerName BuiltinMarshalerName = "otlp_proto"
+	OtlpJSONBuiltinMarshalerName  BuiltinMarshalerName = "otlp_json"
+)
 
-func (c *builtinMarshalerResolverConfig) Validate() error {
-	if c.builtinMarshalerResolver != nil {
-		return nil
-	}
-
-	var genericMarshaler GenericMarshaler
-	switch c.builtinMarshalerName {
+func newBuiltinMarshalerResolver(builtinMarshalerName BuiltinMarshalerName) (resolver, error) {
+	var genericMarshaler genericMarshaler
+	switch builtinMarshalerName {
 	case OtlpProtoBuiltinMarshalerName:
 		genericMarshaler = &builtinMarshaler{
 			logsMarshaler:    &plog.ProtoMarshaler{},
@@ -85,26 +69,19 @@ func (c *builtinMarshalerResolverConfig) Validate() error {
 			tracesMarshaler:  &ptrace.JSONMarshaler{},
 		}
 	default:
-		return fmt.Errorf("unsupported built-in marshaler: %s", c.builtinMarshalerName)
+		return nil, fmt.Errorf("unsupported built-in marshaler: %s", builtinMarshalerName)
 	}
 
-	c.builtinMarshalerResolver = &builtinMarshalerResolver{
+	return &builtinMarshalerResolver{
 		genericMarshaler: genericMarshaler,
-	}
-	return nil
+	}, nil
 }
-
-func (c *builtinMarshalerResolverConfig) resolver() Resolver {
-	return c.builtinMarshalerResolver
-}
-
-var _ resolverConfig = (*builtinMarshalerResolverConfig)(nil)
 
 type encodingExtensionResolver struct {
 	id component.ID
 }
 
-func (r *encodingExtensionResolver) Resolve(host component.Host) (GenericMarshaler, error) {
+func (r *encodingExtensionResolver) resolve(host component.Host) (genericMarshaler, error) {
 	encodingExtension, ok := host.GetExtensions()[r.id]
 	if !ok {
 		return nil, fmt.Errorf("encoding extension not found: %s", r.id)
@@ -112,78 +89,15 @@ func (r *encodingExtensionResolver) Resolve(host component.Host) (GenericMarshal
 	return encodingExtension, nil
 }
 
-var _ Resolver = (*encodingExtensionResolver)(nil)
+var _ resolver = (*encodingExtensionResolver)(nil)
 
-type encodingExtensionResolverConfig struct {
-	encodingExtensionName []byte
-
-	encodingExtensionResolver *encodingExtensionResolver
-}
-
-func (c *encodingExtensionResolverConfig) Validate() error {
-	if c.encodingExtensionResolver != nil {
-		return nil
-	}
-
+func newEncodingExtensionResolver(encodingExtensionName []byte) (resolver, error) {
 	var id component.ID
-	if err := id.UnmarshalText(c.encodingExtensionName); err != nil {
-		return fmt.Errorf("failed to unmarshal encoding extension name: %w", err)
+	if err := id.UnmarshalText(encodingExtensionName); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal encoding extension name: %w", err)
 	}
 
-	c.encodingExtensionResolver = &encodingExtensionResolver{
+	return &encodingExtensionResolver{
 		id: id,
-	}
-	return nil
-}
-
-func (c *encodingExtensionResolverConfig) resolver() Resolver {
-	return c.encodingExtensionResolver
-}
-
-var _ resolverConfig = (*encodingExtensionResolverConfig)(nil)
-
-type ResolverConfig struct {
-	builtinMarshalerResolverConfig  *builtinMarshalerResolverConfig  `mapstructure:",squash"`
-	encodingExtensionResolverConfig *encodingExtensionResolverConfig `mapstructure:",squash"`
-
-	resolver Resolver
-}
-
-func (c *ResolverConfig) Validate() error {
-	if c.resolver != nil {
-		return nil
-	}
-
-	var resolverConfig resolverConfig
-	if c.encodingExtensionResolverConfig != nil {
-		resolverConfig = c.encodingExtensionResolverConfig
-	} else if c.builtinMarshalerResolverConfig != nil {
-		resolverConfig = c.builtinMarshalerResolverConfig
-	} else {
-		return errors.New("marshaler not configured")
-	}
-
-	if err := resolverConfig.Validate(); err != nil {
-		return err
-	}
-
-	c.resolver = resolverConfig.resolver()
-	return nil
-}
-
-func NewDefaultResolverConfig() ResolverConfig {
-	return ResolverConfig{
-		builtinMarshalerResolverConfig: &builtinMarshalerResolverConfig{
-			builtinMarshalerName: OtlpProtoBuiltinMarshalerName,
-		},
-	}
-}
-
-func NewResolver(cfg *ResolverConfig) (Resolver, error) {
-	if cfg.resolver == nil {
-		if err := cfg.Validate(); err != nil {
-			return nil, err
-		}
-	}
-	return cfg.resolver, nil
+	}, nil
 }

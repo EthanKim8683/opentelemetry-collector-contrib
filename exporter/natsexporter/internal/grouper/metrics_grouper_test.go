@@ -42,12 +42,12 @@ func groupMetrics(t *testing.T, subject string, srcMetrics pmetric.Metrics) ([]G
 			resourceMetrics,
 		))
 		if err != nil {
-			return "", err
+			return "", errors.New("failed to evaluate metrics subject expression")
 		}
 
 		subject, ok := subjectAsAny.(string)
 		if !ok {
-			return "", errors.New("subject is not a string")
+			return "", errors.New("constructed metrics subject is not a string")
 		}
 		return subject, nil
 	}
@@ -113,10 +113,7 @@ func TestMetricsGrouper(t *testing.T) {
 				srcMetrics, err := golden.ReadMetrics(filepath.Join(testCaseDir, "metrics.yaml"))
 				require.NoError(t, err)
 
-				cfg := &MetricsGrouperConfig{
-					Subject: subject,
-				}
-				metricsGrouper, err := NewMetricsGrouper(cfg, componenttest.NewNopTelemetrySettings())
+				metricsGrouper, err := newMetricsGrouper(subject, componenttest.NewNopTelemetrySettings())
 				assert.NoError(t, err)
 
 				haveGroups, haveErr := metricsGrouper.Group(t.Context(), srcMetrics)

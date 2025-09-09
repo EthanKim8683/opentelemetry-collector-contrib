@@ -41,12 +41,12 @@ func groupLogs(t *testing.T, subject string, srcLogs plog.Logs) ([]Group[plog.Lo
 			resourceLogs,
 		))
 		if err != nil {
-			return "", err
+			return "", errors.New("failed to evaluate logs subject expression")
 		}
 
 		subject, ok := subjectAsAny.(string)
 		if !ok {
-			return "", errors.New("subject is not a string")
+			return "", errors.New("constructed logs subject is not a string")
 		}
 		return subject, nil
 	}
@@ -112,10 +112,7 @@ func TestLogsGrouper(t *testing.T) {
 				srcLogs, err := golden.ReadLogs(filepath.Join(testCaseDir, "logs.yaml"))
 				require.NoError(t, err)
 
-				cfg := &LogsGrouperConfig{
-					Subject: subject,
-				}
-				logsGrouper, err := NewLogsGrouper(cfg, componenttest.NewNopTelemetrySettings())
+				logsGrouper, err := newLogsGrouper(subject, componenttest.NewNopTelemetrySettings())
 				assert.NoError(t, err)
 
 				haveGroups, haveErr := logsGrouper.Group(t.Context(), srcLogs)

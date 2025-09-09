@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/multierr"
 
@@ -53,13 +52,13 @@ func (g *tracesGrouper) Group(ctx context.Context, srcTraces ptrace.Traces) ([]G
 					srcResourceSpans,
 				))
 				if err != nil {
-					errs = multierr.Append(errs, err)
+					errs = multierr.Append(errs, errors.New("failed to evaluate traces subject expression"))
 					continue
 				}
 
 				subject, ok := subjectAsAny.(string)
 				if !ok {
-					errs = multierr.Append(errs, errors.New("subject is not a string"))
+					errs = multierr.Append(errs, errors.New("constructed traces subject is not a string"))
 					continue
 				}
 
@@ -110,51 +109,21 @@ func (g *tracesGrouper) Group(ctx context.Context, srcTraces ptrace.Traces) ([]G
 
 var _ Grouper[ptrace.Traces] = (*tracesGrouper)(nil)
 
-type TracesGrouperConfig struct {
-	Subject string `mapstructure:"subject"`
-
-	tracesGrouper *tracesGrouper
-}
-
-func (c *TracesGrouperConfig) Validate() error {
-	if c.tracesGrouper != nil {
-		return nil
-	}
-
-	if c.Subject == "" {
-		return errors.New("traces subject not configured")
-	}
-
+func newTracesGrouper(subject string, telemetrySettings component.TelemetrySettings) (Grouper[ptrace.Traces], error) {
 	parser, err := ottlspan.NewParser(
 		ottlfuncs.StandardConverters[ottlspan.TransformContext](),
-		componenttest.NewNopTelemetrySettings(),
+		telemetrySettings,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create traces parser: %w", err)
+		return nil, fmt.Errorf("failed to create parser for traces subject expression: %w", err)
 	}
 
-	valueExpression, err := parser.ParseValueExpression(c.Subject)
+	valueExpression, err := parser.ParseValueExpression(subject)
 	if err != nil {
-		return fmt.Errorf("failed to parse traces subject: %w", err)
+		return nil, fmt.Errorf("failed to parse traces subject expression: %w", err)
 	}
 
-	c.tracesGrouper = &tracesGrouper{
+	return &tracesGrouper{
 		valueExpression: valueExpression,
-	}
-	return nil
-}
-
-func NewDefaultTracesGrouperConfig() TracesGrouperConfig {
-	return TracesGrouperConfig{
-		Subject: "\"otel_traces\"",
-	}
-}
-
-func NewTracesGrouper(cfg *TracesGrouperConfig, telemetrySettings component.TelemetrySettings) (*tracesGrouper, error) {
-	if cfg.tracesGrouper == nil {
-		if err := cfg.Validate(); err != nil {
-			return nil, err
-		}
-	}
-	return cfg.tracesGrouper, nil
+	}, nil
 }

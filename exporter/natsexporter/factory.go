@@ -6,10 +6,7 @@ package natsexporter // import "github.com/open-telemetry/opentelemetry-collecto
 import (
 	"context"
 
-	"github.com/nats-io/nats.go"
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/configretry"
-	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 
@@ -29,34 +26,11 @@ const (
 func NewFactory() exporter.Factory {
 	return exporter.NewFactory(
 		metadata.Type,
-		createDefaultConfig,
+		newDefaultConfig,
 		exporter.WithLogs(createLogsExporter, metadata.LogsStability),
 		exporter.WithMetrics(createMetricsExporter, metadata.MetricsStability),
 		exporter.WithTraces(createTracesExporter, metadata.TracesStability),
 	)
-}
-
-func createDefaultConfig() component.Config {
-	return &Config{
-		Endpoint: nats.DefaultURL,
-		Pedantic: true,
-		TLS:      configtls.NewDefaultClientConfig(),
-		Logs: LogsConfig{
-			Subject:              defaultLogsSubject,
-			BuiltinMarshalerName: defaultLogsMarshaler,
-		},
-		Metrics: MetricsConfig{
-			Subject:              defaultMetricsSubject,
-			BuiltinMarshalerName: defaultMetricsMarshaler,
-		},
-		Traces: TracesConfig{
-			Subject:              defaultTracesSubject,
-			BuiltinMarshalerName: defaultTracesMarshaler,
-		},
-		Auth:             AuthConfig{},
-		BackOffConfig:    configretry.NewDefaultBackOffConfig(),
-		QueueBatchConfig: exporterhelper.NewDefaultQueueConfig(),
-	}
 }
 
 func createLogsExporter(

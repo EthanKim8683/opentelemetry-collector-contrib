@@ -5,7 +5,7 @@ import (
 )
 
 type Publisher interface {
-	Start() error
+	Connect() error
 	Publish(ctx context.Context, subject string, data []byte) error
-	Shutdown() error
+	Disconnect() error
 }

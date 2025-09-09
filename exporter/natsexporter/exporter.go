@@ -22,7 +22,7 @@ type natsExporter[T any] struct {
 	set       exporter.Settings
 	cfg       *Config
 	grouper   grouper.Grouper[T]
-	marshaler marshaler.Marshaler[T]
+	marshaler *marshaler.Marshaler[T]
 	publisher publisher.Publisher
 }
 
@@ -30,7 +30,7 @@ func newNatsExporter[T any](
 	set exporter.Settings,
 	cfg *Config,
 	grouper grouper.Grouper[T],
-	marshaler marshaler.Marshaler[T],
+	marshaler *marshaler.Marshaler[T],
 ) *natsExporter[T] {
 	return &natsExporter[T]{
 		set:       set,
@@ -73,18 +73,12 @@ func (e *natsExporter[T]) shutdown(_ context.Context) error {
 }
 
 func newNatsLogsExporter(set exporter.Settings, cfg *Config) (*natsExporter[plog.Logs], error) {
-	// var errs error
-
-	// grouper, err := grouper.NewLogsGrouper(cfg.Logs.Subject, set.TelemetrySettings)
-	// errs = multierr.Append(errs, err)
-
-	// resolver, err := createResolver((*SignalConfig)(&cfg.Logs))
-	// errs = multierr.Append(errs, err)
-	// marshaler := marshaler.NewMarshaler(resolver, marshaler.PickMarshalLogs)
-
-	// return newNatsExporter(set, cfg, grouper, marshaler), errs
-
-	return nil, nil
+	var errs error
+	grouper, err := cfg.Logs.GrouperConfig.NewGrouper(set.TelemetrySettings)
+	errs = multierr.Append(errs, err)
+	marshaler, err := cfg.Logs.MarshalerConfig.NewMarshaler()
+	errs = multierr.Append(errs, err)
+	return newNatsExporter(set, cfg, grouper, marshaler), errs
 }
 
 func newNatsMetricsExporter(set exporter.Settings, cfg *Config) (*natsExporter[pmetric.Metrics], error) {
