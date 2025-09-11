@@ -3,7 +3,7 @@ module github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsex
 go 1.25.1
 
 require (
-	github.com/google/uuid v1.6.0
+	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/nats-io/jwt/v2 v2.7.4
 	github.com/nats-io/nats-server/v2 v2.11.8
 	github.com/nats-io/nats.go v1.45.0
@@ -14,9 +14,8 @@ require (
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.40.0
 	go.opentelemetry.io/collector/component/componenttest v0.133.0
-	go.opentelemetry.io/collector/config/configtls v1.39.0
+	go.opentelemetry.io/collector/config/configretry v1.39.0
 	go.opentelemetry.io/collector/confmap v1.39.0
-	go.opentelemetry.io/collector/confmap/xconfmap v0.133.0
 	go.opentelemetry.io/collector/exporter v0.133.0
 	go.opentelemetry.io/collector/exporter/exportertest v0.133.0
 	go.opentelemetry.io/collector/pdata v1.40.0
@@ -30,12 +29,9 @@ require (
 	github.com/antchfx/xmlquery v1.4.4 // indirect
 	github.com/antchfx/xpath v1.3.5 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
-	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/elastic/go-grok v0.3.1 // indirect
 	github.com/elastic/lunes v0.1.0 // indirect
-	github.com/foxboron/go-tpm-keyfiles v0.0.0-20250520203025-c3c3a4ec1653 // indirect
-	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
@@ -44,6 +40,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/go-tpm v0.9.5 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
@@ -66,9 +63,8 @@ require (
 	github.com/ua-parser/uap-go v0.0.0-20250326155420-f7f5a2f9f5bc // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/collector/client v1.39.0 // indirect
-	go.opentelemetry.io/collector/config/configopaque v1.39.0 // indirect
 	go.opentelemetry.io/collector/config/configoptional v0.133.0 // indirect
-	go.opentelemetry.io/collector/config/configretry v1.39.0 // indirect
+	go.opentelemetry.io/collector/confmap/xconfmap v0.133.0 // indirect
 	go.opentelemetry.io/collector/consumer v1.39.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror v0.133.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumertest v0.133.0 // indirect

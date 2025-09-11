@@ -35,15 +35,15 @@ func (jso *JetStreamOptions) SetStallWait(stallWait time.Duration) {
 func (jso *JetStreamOptions) SetDeduplicate(deduplicate bool) {
 	var buildPublishOptFunc buildJetStreamPublishOptFunc
 	if deduplicate {
-		jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(data []byte) jetstream.PublishOpt {
+		buildPublishOptFunc = func(data []byte) jetstream.PublishOpt {
 			hash := xxhash.Sum64(data)
 			msgID := strconv.FormatUint(hash, 16)
 			return jetstream.WithMsgID(msgID)
-		})
+		}
 	} else {
-		jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(_ []byte) jetstream.PublishOpt {
+		buildPublishOptFunc = func(_ []byte) jetstream.PublishOpt {
 			return jetstream.WithMsgID("")
-		})
+		}
 	}
 	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, buildPublishOptFunc)
 }

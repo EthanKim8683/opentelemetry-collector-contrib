@@ -76,6 +76,7 @@ func (p *JetStreamPublisher) Publish(ctx context.Context, subject string, data [
 }
 
 func (p *JetStreamPublisher) Disconnect() error {
+	p.js.CleanupPublisher()
 	// TODO: Figure out Drain
 	// return p.nc.Drain()
 	p.nc.Close()
