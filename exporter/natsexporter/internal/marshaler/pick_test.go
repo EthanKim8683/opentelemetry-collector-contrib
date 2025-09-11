@@ -17,14 +17,14 @@ func TestPickMarshalLogs(t *testing.T) {
 
 	t.Run("returns MarshalLogs method for plog.Marshaler", func(t *testing.T) {
 		genericMarshaler := &plog.JSONMarshaler{}
-		marshal, err := pickMarshalLogs(genericMarshaler)
+		marshal, err := PickMarshalLogs(genericMarshaler)
 		assert.NoError(t, err)
 		assert.NotNil(t, marshal)
 	})
 
 	t.Run("returns error for non-plog.Marshaler", func(t *testing.T) {
 		genericMarshaler := &pmetric.JSONMarshaler{}
-		_, err := pickMarshalLogs(genericMarshaler)
+		_, err := PickMarshalLogs(genericMarshaler)
 		assert.Error(t, err)
 	})
 }
@@ -34,14 +34,14 @@ func TestPickMarshalMetrics(t *testing.T) {
 
 	t.Run("returns MarshalMetrics method for pmetric.Marshaler", func(t *testing.T) {
 		genericMarshaler := &pmetric.JSONMarshaler{}
-		marshal, err := pickMarshalMetrics(genericMarshaler)
+		marshal, err := PickMarshalMetrics(genericMarshaler)
 		assert.NoError(t, err)
 		assert.NotNil(t, marshal)
 	})
 
 	t.Run("returns error for non-pmetric.Marshaler", func(t *testing.T) {
 		genericMarshaler := &plog.JSONMarshaler{}
-		_, err := pickMarshalMetrics(genericMarshaler)
+		_, err := PickMarshalMetrics(genericMarshaler)
 		assert.Error(t, err)
 	})
 }
@@ -51,14 +51,14 @@ func TestPickMarshalTraces(t *testing.T) {
 
 	t.Run("returns MarshalTraces method for ptrace.Marshaler", func(t *testing.T) {
 		genericMarshaler := &ptrace.JSONMarshaler{}
-		marshal, err := pickMarshalTraces(genericMarshaler)
+		marshal, err := PickMarshalTraces(genericMarshaler)
 		assert.NoError(t, err)
 		assert.NotNil(t, marshal)
 	})
 
 	t.Run("returns error for non-ptrace.Marshaler", func(t *testing.T) {
 		genericMarshaler := &plog.JSONMarshaler{}
-		_, err := pickMarshalTraces(genericMarshaler)
+		_, err := PickMarshalTraces(genericMarshaler)
 		assert.Error(t, err)
 	})
 }

@@ -109,7 +109,7 @@ func (g *logsGrouper) Group(ctx context.Context, srcLogs plog.Logs) ([]Group[plo
 
 var _ Grouper[plog.Logs] = (*logsGrouper)(nil)
 
-func newLogsGrouper(subject string, telemetrySettings component.TelemetrySettings) (Grouper[plog.Logs], error) {
+func NewLogsGrouper(subjectExpression string, telemetrySettings component.TelemetrySettings) (Grouper[plog.Logs], error) {
 	parser, err := ottllog.NewParser(
 		ottlfuncs.StandardConverters[ottllog.TransformContext](),
 		telemetrySettings,
@@ -118,7 +118,7 @@ func newLogsGrouper(subject string, telemetrySettings component.TelemetrySetting
 		return nil, fmt.Errorf("failed to create parser for logs subject expression: %w", err)
 	}
 
-	valueExpression, err := parser.ParseValueExpression(subject)
+	valueExpression, err := parser.ParseValueExpression(subjectExpression)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse logs subject expression: %w", err)
 	}

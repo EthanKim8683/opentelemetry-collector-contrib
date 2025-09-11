@@ -111,7 +111,7 @@ func (g *metricsGrouper) Group(ctx context.Context, srcMetrics pmetric.Metrics) 
 
 var _ Grouper[pmetric.Metrics] = (*metricsGrouper)(nil)
 
-func newMetricsGrouper(subject string, telemetrySettings component.TelemetrySettings) (Grouper[pmetric.Metrics], error) {
+func NewMetricsGrouper(subjectExpression string, telemetrySettings component.TelemetrySettings) (Grouper[pmetric.Metrics], error) {
 	parser, err := ottlmetric.NewParser(
 		ottlfuncs.StandardConverters[ottlmetric.TransformContext](),
 		telemetrySettings,
@@ -120,7 +120,7 @@ func newMetricsGrouper(subject string, telemetrySettings component.TelemetrySett
 		return nil, fmt.Errorf("failed to create parser for metrics subject expression: %w", err)
 	}
 
-	valueExpression, err := parser.ParseValueExpression(subject)
+	valueExpression, err := parser.ParseValueExpression(subjectExpression)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse metrics subject expression: %w", err)
 	}

@@ -112,7 +112,7 @@ func TestLogsGrouper(t *testing.T) {
 				srcLogs, err := golden.ReadLogs(filepath.Join(testCaseDir, "logs.yaml"))
 				require.NoError(t, err)
 
-				logsGrouper, err := newLogsGrouper(subject, componenttest.NewNopTelemetrySettings())
+				logsGrouper, err := NewLogsGrouper(subject, componenttest.NewNopTelemetrySettings())
 				assert.NoError(t, err)
 
 				haveGroups, haveErr := logsGrouper.Group(t.Context(), srcLogs)

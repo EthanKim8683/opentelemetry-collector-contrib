@@ -112,7 +112,7 @@ func TestTracesGrouper(t *testing.T) {
 				srcTraces, err := golden.ReadTraces(filepath.Join(testCaseDir, "traces.yaml"))
 				require.NoError(t, err)
 
-				tracesGrouper, err := newTracesGrouper(subject, componenttest.NewNopTelemetrySettings())
+				tracesGrouper, err := NewTracesGrouper(subject, componenttest.NewNopTelemetrySettings())
 				assert.NoError(t, err)
 
 				haveGroups, haveErr := tracesGrouper.Group(t.Context(), srcTraces)

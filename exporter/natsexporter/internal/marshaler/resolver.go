@@ -12,10 +12,10 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-type genericMarshaler any
+type GenericMarshaler any
 
-type resolver interface {
-	resolve(host component.Host) (genericMarshaler, error)
+type Resolver interface {
+	Resolve(host component.Host) (GenericMarshaler, error)
 }
 
 type builtinMarshaler struct {
@@ -37,14 +37,14 @@ func (g *builtinMarshaler) MarshalTraces(td ptrace.Traces) ([]byte, error) {
 }
 
 type builtinMarshalerResolver struct {
-	genericMarshaler genericMarshaler
+	genericMarshaler GenericMarshaler
 }
 
-func (r *builtinMarshalerResolver) resolve(host component.Host) (genericMarshaler, error) {
+func (r *builtinMarshalerResolver) Resolve(host component.Host) (GenericMarshaler, error) {
 	return r.genericMarshaler, nil
 }
 
-var _ resolver = (*builtinMarshalerResolver)(nil)
+var _ Resolver = (*builtinMarshalerResolver)(nil)
 
 type BuiltinMarshalerName string
 
@@ -53,8 +53,8 @@ const (
 	OtlpJSONBuiltinMarshalerName  BuiltinMarshalerName = "otlp_json"
 )
 
-func newBuiltinMarshalerResolver(builtinMarshalerName BuiltinMarshalerName) (resolver, error) {
-	var genericMarshaler genericMarshaler
+func NewBuiltinMarshalerResolver(builtinMarshalerName BuiltinMarshalerName) (Resolver, error) {
+	var genericMarshaler GenericMarshaler
 	switch builtinMarshalerName {
 	case OtlpProtoBuiltinMarshalerName:
 		genericMarshaler = &builtinMarshaler{
@@ -81,7 +81,7 @@ type encodingExtensionResolver struct {
 	id component.ID
 }
 
-func (r *encodingExtensionResolver) resolve(host component.Host) (genericMarshaler, error) {
+func (r *encodingExtensionResolver) Resolve(host component.Host) (GenericMarshaler, error) {
 	encodingExtension, ok := host.GetExtensions()[r.id]
 	if !ok {
 		return nil, fmt.Errorf("encoding extension not found: %s", r.id)
@@ -89,9 +89,9 @@ func (r *encodingExtensionResolver) resolve(host component.Host) (genericMarshal
 	return encodingExtension, nil
 }
 
-var _ resolver = (*encodingExtensionResolver)(nil)
+var _ Resolver = (*encodingExtensionResolver)(nil)
 
-func newEncodingExtensionResolver(encodingExtensionName []byte) (resolver, error) {
+func NewEncodingExtensionResolver(encodingExtensionName []byte) (Resolver, error) {
 	var id component.ID
 	if err := id.UnmarshalText(encodingExtensionName); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal encoding extension name: %w", err)

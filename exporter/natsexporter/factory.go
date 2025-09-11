@@ -53,7 +53,6 @@ func createLogsExporter(
 		exporterhelper.WithStart(exporter.start),
 		exporterhelper.WithShutdown(exporter.shutdown),
 		exporterhelper.WithQueueBatch(natsCfg.QueueBatchConfig, exporterhelper.NewLogsQueueBatchSettings()),
-		exporterhelper.WithRetry(natsCfg.BackOffConfig),
 	)
 }
 
@@ -77,7 +76,6 @@ func createMetricsExporter(
 		exporterhelper.WithStart(exporter.start),
 		exporterhelper.WithShutdown(exporter.shutdown),
 		exporterhelper.WithQueueBatch(natsCfg.QueueBatchConfig, exporterhelper.NewMetricsQueueBatchSettings()),
-		exporterhelper.WithRetry(natsCfg.BackOffConfig),
 	)
 }
 
@@ -101,6 +99,5 @@ func createTracesExporter(
 		exporterhelper.WithStart(exporter.start),
 		exporterhelper.WithShutdown(exporter.shutdown),
 		exporterhelper.WithQueueBatch(natsCfg.QueueBatchConfig, exporterhelper.NewTracesQueueBatchSettings()),
-		exporterhelper.WithRetry(natsCfg.BackOffConfig),
 	)
 }

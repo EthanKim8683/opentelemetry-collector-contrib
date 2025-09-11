@@ -1,6 +1,6 @@
 module github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter
 
-go 1.24.5
+go 1.25.1
 
 require (
 	github.com/google/uuid v1.6.0

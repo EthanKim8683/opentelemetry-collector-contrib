@@ -11,11 +11,11 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-type marshalFunc[T any] func(data T) ([]byte, error)
+type MarshalFunc[T any] func(data T) ([]byte, error)
 
-type pickFunc[T any] func(genericMarshaler genericMarshaler) (marshalFunc[T], error)
+type PickFunc[T any] func(genericMarshaler GenericMarshaler) (MarshalFunc[T], error)
 
-func pickMarshalLogs(genericMarshaler genericMarshaler) (marshalFunc[plog.Logs], error) {
+func PickMarshalLogs(genericMarshaler GenericMarshaler) (MarshalFunc[plog.Logs], error) {
 	logsMarshaler, ok := genericMarshaler.(plog.Marshaler)
 	if !ok {
 		return nil, errors.New("genericMarshaler does not implement plog.Marshaler")
@@ -23,9 +23,9 @@ func pickMarshalLogs(genericMarshaler genericMarshaler) (marshalFunc[plog.Logs],
 	return logsMarshaler.MarshalLogs, nil
 }
 
-var _ pickFunc[plog.Logs] = pickMarshalLogs
+var _ PickFunc[plog.Logs] = PickMarshalLogs
 
-func pickMarshalMetrics(genericMarshaler genericMarshaler) (marshalFunc[pmetric.Metrics], error) {
+func PickMarshalMetrics(genericMarshaler GenericMarshaler) (MarshalFunc[pmetric.Metrics], error) {
 	metricsMarshaler, ok := genericMarshaler.(pmetric.Marshaler)
 	if !ok {
 		return nil, errors.New("genericMarshaler does not implement pmetric.Marshaler")
@@ -33,9 +33,9 @@ func pickMarshalMetrics(genericMarshaler genericMarshaler) (marshalFunc[pmetric.
 	return metricsMarshaler.MarshalMetrics, nil
 }
 
-var _ pickFunc[pmetric.Metrics] = pickMarshalMetrics
+var _ PickFunc[pmetric.Metrics] = PickMarshalMetrics
 
-func pickMarshalTraces(genericMarshaler genericMarshaler) (marshalFunc[ptrace.Traces], error) {
+func PickMarshalTraces(genericMarshaler GenericMarshaler) (MarshalFunc[ptrace.Traces], error) {
 	tracesMarshaler, ok := genericMarshaler.(ptrace.Marshaler)
 	if !ok {
 		return nil, errors.New("genericMarshaler does not implement ptrace.Marshaler")
@@ -43,4 +43,4 @@ func pickMarshalTraces(genericMarshaler genericMarshaler) (marshalFunc[ptrace.Tr
 	return tracesMarshaler.MarshalTraces, nil
 }
 
-var _ pickFunc[ptrace.Traces] = pickMarshalTraces
+var _ PickFunc[ptrace.Traces] = PickMarshalTraces

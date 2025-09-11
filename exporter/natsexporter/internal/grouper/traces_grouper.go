@@ -109,7 +109,7 @@ func (g *tracesGrouper) Group(ctx context.Context, srcTraces ptrace.Traces) ([]G
 
 var _ Grouper[ptrace.Traces] = (*tracesGrouper)(nil)
 
-func newTracesGrouper(subject string, telemetrySettings component.TelemetrySettings) (Grouper[ptrace.Traces], error) {
+func NewTracesGrouper(subjectExpression string, telemetrySettings component.TelemetrySettings) (Grouper[ptrace.Traces], error) {
 	parser, err := ottlspan.NewParser(
 		ottlfuncs.StandardConverters[ottlspan.TransformContext](),
 		telemetrySettings,
@@ -118,7 +118,7 @@ func newTracesGrouper(subject string, telemetrySettings component.TelemetrySetti
 		return nil, fmt.Errorf("failed to create parser for traces subject expression: %w", err)
 	}
 
-	valueExpression, err := parser.ParseValueExpression(subject)
+	valueExpression, err := parser.ParseValueExpression(subjectExpression)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse traces subject expression: %w", err)
 	}
