@@ -1,9 +1,11 @@
 package publisher
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
+	"github.com/cespare/xxhash/v2"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
@@ -28,8 +30,6 @@ type publishOptValidator struct {
 }
 
 func (pov *publishOptValidator) validatePublishOpt(
-	subject string,
-	data []byte,
 	wantPublishOptSlice []jetstream.PublishOpt,
 	havePublishOptSlice []jetstream.PublishOpt,
 ) {
@@ -37,8 +37,8 @@ func (pov *publishOptValidator) validatePublishOpt(
 	wantPublishOptSlice = append(wantPublishOptSlice, mockPublishOpt(&wantOpts))
 	havePublishOptSlice = append(havePublishOptSlice, mockPublishOpt(&haveOpts))
 
-	pov.js.Publish(pov.t.Context(), subject, data, wantPublishOptSlice...)
-	pov.js.Publish(pov.t.Context(), subject, data, havePublishOptSlice...)
+	pov.js.Publish(pov.t.Context(), "", nil, wantPublishOptSlice...)
+	pov.js.Publish(pov.t.Context(), "", nil, havePublishOptSlice...)
 	assert.Equal(pov.t, wantOpts, haveOpts)
 }
 
@@ -70,80 +70,75 @@ func TestJetStreamOptions(t *testing.T) {
 
 	pov := newPublishOptValidator(t)
 
-	tests := []struct {
-		name                 string
-		subject              string
-		data                 []byte
-		initJetStreamOptions func(jetStreamOptions *JetStreamOptions)
-		wantPublishOptSlice  []jetstream.PublishOpt
-	}{
-		{
-			name: "SetRetryWait",
-			initJetStreamOptions: func(jetStreamOptions *JetStreamOptions) {
-				jetStreamOptions.SetRetryWait(time.Second)
-			},
-			wantPublishOptSlice: []jetstream.PublishOpt{jetstream.WithRetryWait(time.Second)},
-		},
-		{
-			name: "SetRetryAttempts",
-			initJetStreamOptions: func(jetStreamOptions *JetStreamOptions) {
-				jetStreamOptions.SetRetryAttempts(3)
-			},
-			wantPublishOptSlice: []jetstream.PublishOpt{jetstream.WithRetryAttempts(3)},
-		},
-		{
-			name: "SetStallWait",
-			initJetStreamOptions: func(jetStreamOptions *JetStreamOptions) {
-				jetStreamOptions.SetStallWait(time.Second)
-			},
-			wantPublishOptSlice: []jetstream.PublishOpt{
-				jetstream.WithStallWait(time.Second),
-			},
-		},
-		{
-			name: "SetDeduplicate",
-			data: []byte("data"),
-			initJetStreamOptions: func(jetStreamOptions *JetStreamOptions) {
-				jetStreamOptions.SetDeduplicate(true)
-			},
-			wantPublishOptSlice: []jetstream.PublishOpt{
-				jetstream.WithMsgID("b7119b48552d1da3"),
-			},
-		},
-		{
-			name: "SetDeduplicate",
-			data: []byte("data"),
-			initJetStreamOptions: func(jetStreamOptions *JetStreamOptions) {
-				jetStreamOptions.SetDeduplicate(false)
-			},
-			wantPublishOptSlice: []jetstream.PublishOpt{
-				jetstream.WithMsgID(""),
-			},
-		},
-		{
-			name: "SetDeduplicate",
-			data: []byte("data"),
-			initJetStreamOptions: func(jetStreamOptions *JetStreamOptions) {
-				jetStreamOptions.SetDeduplicate(true)
-				jetStreamOptions.SetDeduplicate(false)
-			},
-			wantPublishOptSlice: []jetstream.PublishOpt{
-				jetstream.WithMsgID(""),
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	t.Run("SetRetryWait", func(t *testing.T) {
+		retryWait := time.Second
+
+		var jetStreamOptions JetStreamOptions
+		jetStreamOptions.SetRetryWait(retryWait)
+
+		pov.validatePublishOpt(
+			[]jetstream.PublishOpt{jetstream.WithRetryWait(retryWait)},
+			jetStreamOptions.buildPublishOptSlice(nil),
+		)
+	})
+
+	t.Run("SetRetryAttempts", func(t *testing.T) {
+		retryAttempts := 1
+
+		var jetStreamOptions JetStreamOptions
+		jetStreamOptions.SetRetryAttempts(retryAttempts)
+
+		pov.validatePublishOpt(
+			[]jetstream.PublishOpt{jetstream.WithRetryAttempts(retryAttempts)},
+			jetStreamOptions.buildPublishOptSlice(nil),
+		)
+	})
+
+	t.Run("SetStallWait", func(t *testing.T) {
+		stallWait := time.Second
+
+		var jetStreamOptions JetStreamOptions
+		jetStreamOptions.SetStallWait(stallWait)
+
+		pov.validatePublishOpt(
+			[]jetstream.PublishOpt{jetstream.WithStallWait(stallWait)},
+			jetStreamOptions.buildPublishOptSlice(nil),
+		)
+	})
+
+	t.Run("SetDeduplicate", func(t *testing.T) {
+		data := []byte("data")
+		msgID := strconv.FormatUint(xxhash.Sum64(data), 16)
+
+		t.Run("true", func(t *testing.T) {
 			var jetStreamOptions JetStreamOptions
-			tt.initJetStreamOptions(&jetStreamOptions)
-			havePublishOptSlice := jetStreamOptions.buildPublishOptSlice(tt.data)
+			jetStreamOptions.SetDeduplicate(true)
 
 			pov.validatePublishOpt(
-				tt.subject,
-				tt.data,
-				tt.wantPublishOptSlice,
-				havePublishOptSlice,
+				[]jetstream.PublishOpt{jetstream.WithMsgID(msgID)},
+				jetStreamOptions.buildPublishOptSlice(data),
 			)
 		})
-	}
+
+		t.Run("false", func(t *testing.T) {
+			var jetStreamOptions JetStreamOptions
+			jetStreamOptions.SetDeduplicate(false)
+
+			pov.validatePublishOpt(
+				[]jetstream.PublishOpt{jetstream.WithMsgID("")},
+				jetStreamOptions.buildPublishOptSlice(data),
+			)
+		})
+
+		t.Run("true then false", func(t *testing.T) {
+			var jetStreamOptions JetStreamOptions
+			jetStreamOptions.SetDeduplicate(true)
+			jetStreamOptions.SetDeduplicate(false)
+
+			pov.validatePublishOpt(
+				[]jetstream.PublishOpt{jetstream.WithMsgID("")},
+				jetStreamOptions.buildPublishOptSlice(data),
+			)
+		})
+	})
 }
