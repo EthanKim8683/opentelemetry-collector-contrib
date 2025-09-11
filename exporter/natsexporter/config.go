@@ -4,77 +4,82 @@
 package natsexporter // import "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter"
 
 import (
-	"go.opentelemetry.io/collector/config/configretry"
-	"go.opentelemetry.io/collector/exporter/exporterhelper"
-	"go.opentelemetry.io/collector/pdata/plog"
-	"go.opentelemetry.io/collector/pdata/pmetric"
-	"go.opentelemetry.io/collector/pdata/ptrace"
-	"go.uber.org/multierr"
+	"time"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/grouper"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshaler"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/publisher"
+	"go.opentelemetry.io/collector/config/configtls"
+	"go.opentelemetry.io/collector/exporter/exporterhelper"
 )
 
-type PipelineConfig[
-	T any,
-	GrouperConfig grouper.GrouperConfig[T],
-	MarshalerConfig marshaler.MarshalerConfig[T],
-] struct {
-	GrouperConfig   GrouperConfig   `mapstructure:",squash"`
-	MarshalerConfig MarshalerConfig `mapstructure:",squash"`
+type tokenConfig struct {
+	Token string `mapstructure:"token"`
 }
 
-func (c *PipelineConfig[T, GrouperConfig, MarshalerConfig]) Validate() error {
-	var errs error
-	errs = multierr.Append(errs, c.GrouperConfig.Validate())
-	errs = multierr.Append(errs, c.MarshalerConfig.Validate())
-	return errs
+type userConfig struct {
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
 }
 
-type LogsConfig PipelineConfig[
-	plog.Logs,
-	*grouper.LogsGrouperConfig,
-	*marshaler.LogsMarshalerConfig,
-]
+type nkeyConfig struct {
+	Seed []byte `mapstructure:"seed"`
+}
 
-type MetricsConfig PipelineConfig[
-	pmetric.Metrics,
-	*grouper.MetricsGrouperConfig,
-	*marshaler.MetricsMarshalerConfig,
-]
+type nkeyJWTConfig struct {
+	JWT  string `mapstructure:"jwt"`
+	Seed []byte `mapstructure:"seed"`
+}
 
-type TracesConfig PipelineConfig[
-	ptrace.Traces,
-	*grouper.TracesGrouperConfig,
-	*marshaler.TracesMarshalerConfig,
-]
+type nkeyUserFileConfig struct {
+	UserFilePath string `mapstructure:"user_file_path"`
+}
+
+type authConfig struct {
+	Token        *tokenConfig        `mapstructure:"token"`
+	User         *userConfig         `mapstructure:"user"`
+	Nkey         *nkeyConfig         `mapstructure:"nkey"`
+	NkeyJWT      *nkeyJWTConfig      `mapstructure:"nkey_jwt"`
+	NkeyUserFile *nkeyUserFileConfig `mapstructure:"nkey_user_file"`
+}
+
+type resolverConfig struct {
+	MarshalerName         marshaler.BuiltinMarshalerName `mapstructure:"marshaler"`
+	EncodingExtensionName []byte                         `mapstructure:"encoding_extension"`
+}
+
+type logsConfig struct {
+	Subject        string         `mapstructure:"subject"`
+	resolverConfig resolverConfig `mapstructure:",squash"`
+}
+
+type metricsConfig struct {
+	Subject        string         `mapstructure:"subject"`
+	resolverConfig resolverConfig `mapstructure:",squash"`
+}
+
+type tracesConfig struct {
+	Subject        string         `mapstructure:"subject"`
+	resolverConfig resolverConfig `mapstructure:",squash"`
+}
+
+type natsConfig struct {
+	Endpoint string                 `mapstructure:"endpoint"`
+	TLS      configtls.ClientConfig `mapstructure:"tls"`
+	Pedantic bool                   `mapstructure:"pedantic"`
+	Auth     authConfig             `mapstructure:"auth"`
+}
+
+type jetStreamConfig struct {
+	RetryWait     *time.Duration `mapstructure:"retry_wait"`
+	RetryAttempts *int           `mapstructure:"retry_attempts"`
+	StallWait     *time.Duration `mapstructure:"stall_wait"`
+	Deduplicate   *bool          `mapstructure:"deduplicate"`
+}
 
 type Config struct {
-	ConnectorConfig publisher.ConnectorConfig `mapstructure:",squash"`
-
-	Logs    LogsConfig    `mapstructure:"logs"`
-	Metrics MetricsConfig `mapstructure:"metrics"`
-	Traces  TracesConfig  `mapstructure:"traces"`
-
-	BackOffConfig    configretry.BackOffConfig       `mapstructure:"retry_on_failure"`
+	natsConfig       natsConfig                      `mapstructure:",squash"`
+	Logs             logsConfig                      `mapstructure:"logs"`
+	Metrics          metricsConfig                   `mapstructure:"metrics"`
+	Traces           tracesConfig                    `mapstructure:"traces"`
+	JetStream        *jetStreamConfig                `mapstructure:"jetstream"`
 	QueueBatchConfig exporterhelper.QueueBatchConfig `mapstructure:"sending_queue"`
-}
-
-func newDefaultConfig() Config {
-	return Config{
-		ConnectorConfig: publisher.NewDefaultConnectorConfig(),
-		Logs:            newDefaultLogsConfig(),
-		Metrics:         newDefaultMetricsConfig(),
-		Traces:          newDefaultTracesConfig(),
-	}
-}
-
-func (c *Config) Validate() error {
-	var errs error
-	errs = multierr.Append(errs, c.ConnectorConfig.Validate())
-	errs = multierr.Append(errs, c.Logs.Validate())
-	errs = multierr.Append(errs, c.Metrics.Validate())
-	errs = multierr.Append(errs, c.Traces.Validate())
-	return errs
 }

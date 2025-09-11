@@ -43,10 +43,10 @@ func (p *CoreNatsPublisher) Disconnect() error {
 
 var _ Publisher = (*CoreNatsPublisher)(nil)
 
-func NewCoreNatsPublisher(natsOptions *NatsOptions) (Publisher, error) {
+func NewCoreNatsPublisher(natsOptions *NatsOptions) Publisher {
 	return &CoreNatsPublisher{
 		natsOptions: natsOptions,
-	}, nil
+	}
 }
 
 type JetStreamPublisher struct {
@@ -93,9 +93,9 @@ func (p *JetStreamPublisher) Disconnect() error {
 
 var _ Publisher = (*JetStreamPublisher)(nil)
 
-func NewJetStreamPublisher(natsOptions *NatsOptions, jetStreamOptions *JetStreamOptions) (Publisher, error) {
+func NewJetStreamPublisher(natsOptions *NatsOptions, jetStreamOptions *JetStreamOptions) Publisher {
 	return &JetStreamPublisher{
 		natsOptions:      natsOptions,
 		jetStreamOptions: jetStreamOptions,
-	}, nil
+	}
 }
