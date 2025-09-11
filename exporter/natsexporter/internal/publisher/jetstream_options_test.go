@@ -29,38 +29,34 @@ type publishOptValidator struct {
 	js jetstream.JetStream
 }
 
-func (pov *publishOptValidator) validatePublishOpt(
-	wantPublishOptSlice []jetstream.PublishOpt,
-	havePublishOptSlice []jetstream.PublishOpt,
+func (pov *publishOptValidator) validatePublishOpts(
+	wantPublishOpts []jetstream.PublishOpt,
+	havePublishOpts []jetstream.PublishOpt,
 ) {
 	var wantOpts, haveOpts any
-	wantPublishOptSlice = append(wantPublishOptSlice, mockPublishOpt(&wantOpts))
-	havePublishOptSlice = append(havePublishOptSlice, mockPublishOpt(&haveOpts))
+	wantPublishOpts = append(wantPublishOpts, mockPublishOpt(&wantOpts))
+	havePublishOpts = append(havePublishOpts, mockPublishOpt(&haveOpts))
 
-	pov.js.Publish(pov.t.Context(), "", nil, wantPublishOptSlice...)
-	pov.js.Publish(pov.t.Context(), "", nil, havePublishOptSlice...)
+	pov.js.Publish(pov.t.Context(), "", nil, wantPublishOpts...)
+	pov.js.Publish(pov.t.Context(), "", nil, havePublishOpts...)
 	assert.Equal(pov.t, wantOpts, haveOpts)
 }
 
 func newPublishOptValidator(t *testing.T) *publishOptValidator {
-	s, err := server.NewServer(&server.Options{})
+	s, err := server.NewServer(&server.Options{
+		Port: server.RANDOM_PORT,
+	})
 	require.NoError(t, err)
 	s.Start()
-	t.Cleanup(func() {
-		s.Shutdown()
-	})
+	defer s.Shutdown()
 
 	nc, err := nats.Connect(s.ClientURL())
 	require.NoError(t, err)
-	t.Cleanup(func() {
-		nc.Close()
-	})
+	defer nc.Close()
 
 	js, err := jetstream.New(nc)
 	require.NoError(t, err)
-	t.Cleanup(func() {
-		js.CleanupPublisher()
-	})
+	defer js.CleanupPublisher()
 
 	return &publishOptValidator{t, js}
 }
@@ -76,9 +72,9 @@ func TestJetStreamOptions(t *testing.T) {
 		var jetStreamOptions JetStreamOptions
 		jetStreamOptions.SetRetryWait(retryWait)
 
-		pov.validatePublishOpt(
+		pov.validatePublishOpts(
 			[]jetstream.PublishOpt{jetstream.WithRetryWait(retryWait)},
-			jetStreamOptions.buildPublishOptSlice(nil),
+			jetStreamOptions.buildPublishOpts(nil),
 		)
 	})
 
@@ -88,9 +84,9 @@ func TestJetStreamOptions(t *testing.T) {
 		var jetStreamOptions JetStreamOptions
 		jetStreamOptions.SetRetryAttempts(retryAttempts)
 
-		pov.validatePublishOpt(
+		pov.validatePublishOpts(
 			[]jetstream.PublishOpt{jetstream.WithRetryAttempts(retryAttempts)},
-			jetStreamOptions.buildPublishOptSlice(nil),
+			jetStreamOptions.buildPublishOpts(nil),
 		)
 	})
 
@@ -100,9 +96,9 @@ func TestJetStreamOptions(t *testing.T) {
 		var jetStreamOptions JetStreamOptions
 		jetStreamOptions.SetStallWait(stallWait)
 
-		pov.validatePublishOpt(
+		pov.validatePublishOpts(
 			[]jetstream.PublishOpt{jetstream.WithStallWait(stallWait)},
-			jetStreamOptions.buildPublishOptSlice(nil),
+			jetStreamOptions.buildPublishOpts(nil),
 		)
 	})
 
@@ -114,9 +110,18 @@ func TestJetStreamOptions(t *testing.T) {
 			var jetStreamOptions JetStreamOptions
 			jetStreamOptions.SetDeduplicate(true)
 
-			pov.validatePublishOpt(
+			pov.validatePublishOpts(
 				[]jetstream.PublishOpt{jetstream.WithMsgID(msgID)},
-				jetStreamOptions.buildPublishOptSlice(data),
+				jetStreamOptions.buildPublishOpts(data),
+			)
+		})
+
+		t.Run("default", func(t *testing.T) {
+			var jetStreamOptions JetStreamOptions
+
+			pov.validatePublishOpts(
+				nil,
+				jetStreamOptions.buildPublishOpts(data),
 			)
 		})
 
@@ -124,20 +129,32 @@ func TestJetStreamOptions(t *testing.T) {
 			var jetStreamOptions JetStreamOptions
 			jetStreamOptions.SetDeduplicate(false)
 
-			pov.validatePublishOpt(
-				[]jetstream.PublishOpt{jetstream.WithMsgID("")},
-				jetStreamOptions.buildPublishOptSlice(data),
+			pov.validatePublishOpts(
+				nil,
+				jetStreamOptions.buildPublishOpts(data),
 			)
 		})
 
-		t.Run("true then false", func(t *testing.T) {
+		t.Run("true false", func(t *testing.T) {
 			var jetStreamOptions JetStreamOptions
 			jetStreamOptions.SetDeduplicate(true)
 			jetStreamOptions.SetDeduplicate(false)
 
-			pov.validatePublishOpt(
-				[]jetstream.PublishOpt{jetstream.WithMsgID("")},
-				jetStreamOptions.buildPublishOptSlice(data),
+			pov.validatePublishOpts(
+				nil,
+				jetStreamOptions.buildPublishOpts(data),
+			)
+		})
+
+		t.Run("true false true", func(t *testing.T) {
+			var jetStreamOptions JetStreamOptions
+			jetStreamOptions.SetDeduplicate(true)
+			jetStreamOptions.SetDeduplicate(false)
+			jetStreamOptions.SetDeduplicate(true)
+
+			pov.validatePublishOpts(
+				[]jetstream.PublishOpt{jetstream.WithMsgID(msgID)},
+				jetStreamOptions.buildPublishOpts(data),
 			)
 		})
 	})

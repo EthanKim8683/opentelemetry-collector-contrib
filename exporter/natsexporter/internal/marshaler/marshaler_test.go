@@ -33,15 +33,11 @@ func fakePick(genericMarshaler GenericMarshaler) (MarshalFunc[string], error) {
 
 var _ PickFunc[string] = fakePick
 
-func newMarshalerWithFakes() *Marshaler[string] {
-	return NewMarshaler(&fakeResolver{}, fakePick)
-}
-
 func TestMarshaler(t *testing.T) {
 	t.Parallel()
 
 	t.Run("composes resolver and pickFunc", func(t *testing.T) {
-		marshaler := newMarshalerWithFakes()
+		marshaler := NewMarshaler(&fakeResolver{}, fakePick)
 
 		err := marshaler.Resolve(componenttest.NewNopHost())
 		assert.NoError(t, err)

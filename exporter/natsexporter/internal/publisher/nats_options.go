@@ -16,6 +16,12 @@ type NatsOptions struct {
 	setOptionFuncs []setNatsOptionsFunc
 }
 
+func (no *NatsOptions) SetURL(url string) {
+	no.setOptionFuncs = append(no.setOptionFuncs, func(options *nats.Options) {
+		options.Url = url
+	})
+}
+
 func (no *NatsOptions) SetTLS(tls *tls.Config) {
 	no.setOptionFuncs = append(no.setOptionFuncs, func(options *nats.Options) {
 		options.TLSConfig = tls

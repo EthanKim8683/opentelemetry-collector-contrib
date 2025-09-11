@@ -89,6 +89,16 @@ func validateSignatureCB(t *testing.T, wantSignatureCB nats.SignatureHandler, ha
 func TestNatsOptions(t *testing.T) {
 	t.Parallel()
 
+	t.Run("SetURL", func(t *testing.T) {
+		var url = "url"
+
+		var no NatsOptions
+		no.SetURL(url)
+		options := no.buildOptions()
+
+		assert.Equal(t, url, options.Url)
+	})
+
 	t.Run("SetTLS", func(t *testing.T) {
 		var tlsConfig = &tls.Config{}
 

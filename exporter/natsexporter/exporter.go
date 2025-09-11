@@ -32,12 +32,14 @@ func newNatsExporter[T any](
 	cfg *Config,
 	grouper grouper.Grouper[T],
 	marshaler *marshaler.Marshaler[T],
+	publisher publisher.Publisher,
 ) *natsExporter[T] {
 	return &natsExporter[T]{
 		set:       set,
 		cfg:       cfg,
 		grouper:   grouper,
 		marshaler: marshaler,
+		publisher: publisher,
 	}
 }
 

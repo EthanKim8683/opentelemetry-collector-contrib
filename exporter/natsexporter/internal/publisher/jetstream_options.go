@@ -15,19 +15,19 @@ type JetStreamOptions struct {
 }
 
 func (jso *JetStreamOptions) SetRetryWait(retryWait time.Duration) {
-	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(_ []byte) jetstream.PublishOpt {
+	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(data []byte) jetstream.PublishOpt {
 		return jetstream.WithRetryWait(retryWait)
 	})
 }
 
 func (jso *JetStreamOptions) SetRetryAttempts(retryAttempts int) {
-	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(_ []byte) jetstream.PublishOpt {
+	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(data []byte) jetstream.PublishOpt {
 		return jetstream.WithRetryAttempts(retryAttempts)
 	})
 }
 
 func (jso *JetStreamOptions) SetStallWait(stallWait time.Duration) {
-	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(_ []byte) jetstream.PublishOpt {
+	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(data []byte) jetstream.PublishOpt {
 		return jetstream.WithStallWait(stallWait)
 	})
 }
@@ -41,21 +41,17 @@ func (jso *JetStreamOptions) SetDeduplicate(deduplicate bool) {
 			return jetstream.WithMsgID(msgID)
 		}
 	} else {
-		buildPublishOptFunc = func(_ []byte) jetstream.PublishOpt {
+		buildPublishOptFunc = func(data []byte) jetstream.PublishOpt {
 			return jetstream.WithMsgID("")
 		}
 	}
 	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, buildPublishOptFunc)
 }
 
-func (jso *JetStreamOptions) buildJetStreamOptSlice() []jetstream.JetStreamOpt {
-	return nil
-}
-
-func (jso *JetStreamOptions) buildPublishOptSlice(data []byte) []jetstream.PublishOpt {
-	publishOptSlice := make([]jetstream.PublishOpt, 0, len(jso.buildPublishOptFuncs))
+func (jso *JetStreamOptions) buildPublishOpts(data []byte) []jetstream.PublishOpt {
+	publishOpts := make([]jetstream.PublishOpt, 0, len(jso.buildPublishOptFuncs))
 	for _, buildPublishOptFunc := range jso.buildPublishOptFuncs {
-		publishOptSlice = append(publishOptSlice, buildPublishOptFunc(data))
+		publishOpts = append(publishOpts, buildPublishOptFunc(data))
 	}
-	return publishOptSlice
+	return publishOpts
 }

@@ -13,13 +13,14 @@ type Publisher interface {
 	Disconnect() error
 }
 
-type NatsPublisher struct {
+type CoreNatsPublisher struct {
 	natsOptions *NatsOptions
 	nc          *nats.Conn
 }
 
-func (p *NatsPublisher) Connect() error {
-	nc, err := p.natsOptions.buildOptions().Connect()
+func (p *CoreNatsPublisher) Connect() error {
+	options := p.natsOptions.buildOptions()
+	nc, err := options.Connect()
 	if err != nil {
 		return err
 	}
@@ -28,21 +29,21 @@ func (p *NatsPublisher) Connect() error {
 	return nil
 }
 
-func (p *NatsPublisher) Publish(_ context.Context, subject string, data []byte) error {
+func (p *CoreNatsPublisher) Publish(ctx context.Context, subject string, data []byte) error {
 	return p.nc.Publish(subject, data)
 }
 
-func (p *NatsPublisher) Disconnect() error {
+func (p *CoreNatsPublisher) Disconnect() error {
 	// TODO: Figure out Drain
 	// return p.nc.Drain()
 	p.nc.Close()
 	return nil
 }
 
-var _ Publisher = (*NatsPublisher)(nil)
+var _ Publisher = (*CoreNatsPublisher)(nil)
 
-func NewNatsPublisher(natsOptions *NatsOptions) (Publisher, error) {
-	return &NatsPublisher{
+func NewCoreNatsPublisher(natsOptions *NatsOptions) (Publisher, error) {
+	return &CoreNatsPublisher{
 		natsOptions: natsOptions,
 	}, nil
 }
@@ -55,13 +56,14 @@ type JetStreamPublisher struct {
 }
 
 func (p *JetStreamPublisher) Connect() error {
-	nc, err := p.natsOptions.buildOptions().Connect()
+	options := p.natsOptions.buildOptions()
+	nc, err := options.Connect()
 	if err != nil {
 		return err
 	}
 	p.nc = nc
 
-	js, err := jetstream.New(nc, p.jetStreamOptions.buildJetStreamOptSlice()...)
+	js, err := jetstream.New(nc)
 	if err != nil {
 		return err
 	}
@@ -71,7 +73,7 @@ func (p *JetStreamPublisher) Connect() error {
 }
 
 func (p *JetStreamPublisher) Publish(ctx context.Context, subject string, data []byte) error {
-	_, err := p.js.Publish(ctx, subject, data, p.jetStreamOptions.buildPublishOptSlice(data)...)
+	_, err := p.js.Publish(ctx, subject, data, p.jetStreamOptions.buildPublishOpts(data)...)
 	return err
 }
 
