@@ -52,11 +52,9 @@ func newPublishOptValidator(t *testing.T) *publishOptValidator {
 
 	nc, err := nats.Connect(s.ClientURL())
 	require.NoError(t, err)
-	defer nc.Close()
 
 	js, err := jetstream.New(nc)
 	require.NoError(t, err)
-	defer js.CleanupPublisher()
 
 	return &publishOptValidator{t, js}
 }

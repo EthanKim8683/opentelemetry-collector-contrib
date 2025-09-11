@@ -4,7 +4,7 @@
 package grouper
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -41,12 +41,12 @@ func groupTraces(t *testing.T, subject string, srcTraces ptrace.Traces) ([]Group
 			resourceSpans,
 		))
 		if err != nil {
-			return "", errors.New("failed to evaluate traces subject expression")
+			return "", err
 		}
 
 		subject, ok := subjectAsAny.(string)
 		if !ok {
-			return "", errors.New("constructed traces subject is not a string")
+			return "", fmt.Errorf("traces subject is not a string: %v", subjectAsAny)
 		}
 		return subject, nil
 	}

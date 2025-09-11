@@ -34,9 +34,10 @@ func (p *CoreNatsPublisher) Publish(ctx context.Context, subject string, data []
 }
 
 func (p *CoreNatsPublisher) Disconnect() error {
-	// TODO: Figure out Drain
-	// return p.nc.Drain()
-	p.nc.Close()
+	if err := p.nc.Drain(); err != nil {
+		p.nc.Close()
+		return err
+	}
 	return nil
 }
 
@@ -74,14 +75,19 @@ func (p *JetStreamPublisher) Connect() error {
 
 func (p *JetStreamPublisher) Publish(ctx context.Context, subject string, data []byte) error {
 	_, err := p.js.Publish(ctx, subject, data, p.jetStreamOptions.buildPublishOpts(data)...)
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (p *JetStreamPublisher) Disconnect() error {
 	p.js.CleanupPublisher()
-	// TODO: Figure out Drain
-	// return p.nc.Drain()
-	p.nc.Close()
+
+	if err := p.nc.Drain(); err != nil {
+		p.nc.Close()
+		return err
+	}
 	return nil
 }
 

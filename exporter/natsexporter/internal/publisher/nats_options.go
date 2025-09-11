@@ -2,7 +2,6 @@ package publisher
 
 import (
 	"crypto/tls"
-	"fmt"
 	"os"
 
 	"github.com/nats-io/jwt/v2"
@@ -50,12 +49,12 @@ func (no *NatsOptions) SetUser(user string, password string) {
 func (no *NatsOptions) SetNkey(seed []byte) error {
 	keyPair, err := nkeys.FromSeed(seed)
 	if err != nil {
-		return fmt.Errorf("failed to decode seed: %w", err)
+		return err
 	}
 
 	publicKey, err := keyPair.PublicKey()
 	if err != nil {
-		return fmt.Errorf("failed to derive public key from seed: %w", err)
+		return err
 	}
 
 	no.setOptionFuncs = append(no.setOptionFuncs, func(options *nats.Options) {
@@ -68,7 +67,7 @@ func (no *NatsOptions) SetNkey(seed []byte) error {
 func (no *NatsOptions) SetNkeyJWT(userJWT string, seed []byte) error {
 	keyPair, err := nkeys.FromSeed(seed)
 	if err != nil {
-		return fmt.Errorf("failed to decode seed: %w", err)
+		return err
 	}
 
 	no.setOptionFuncs = append(no.setOptionFuncs, func(options *nats.Options) {
@@ -83,17 +82,17 @@ func (no *NatsOptions) SetNkeyJWT(userJWT string, seed []byte) error {
 func (no *NatsOptions) SetNkeyUserFile(userFilePath string) error {
 	userFile, err := os.ReadFile(userFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to read user file: %w", err)
+		return err
 	}
 
 	userJWT, err := jwt.ParseDecoratedJWT(userFile)
 	if err != nil {
-		return fmt.Errorf("failed to parse JWT from user file: %w", err)
+		return err
 	}
 
 	keyPair, err := jwt.ParseDecoratedNKey(userFile)
 	if err != nil {
-		return fmt.Errorf("failed to parse seed from user file: %w", err)
+		return err
 	}
 
 	no.setOptionFuncs = append(no.setOptionFuncs, func(options *nats.Options) {

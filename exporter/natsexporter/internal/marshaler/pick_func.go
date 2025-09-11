@@ -18,7 +18,7 @@ type PickFunc[T any] func(genericMarshaler GenericMarshaler) (MarshalFunc[T], er
 func PickMarshalLogs(genericMarshaler GenericMarshaler) (MarshalFunc[plog.Logs], error) {
 	logsMarshaler, ok := genericMarshaler.(plog.Marshaler)
 	if !ok {
-		return nil, errors.New("genericMarshaler does not implement plog.Marshaler")
+		return nil, errors.New("marshaler does not implement plog.Marshaler")
 	}
 	return logsMarshaler.MarshalLogs, nil
 }
@@ -28,7 +28,7 @@ var _ PickFunc[plog.Logs] = PickMarshalLogs
 func PickMarshalMetrics(genericMarshaler GenericMarshaler) (MarshalFunc[pmetric.Metrics], error) {
 	metricsMarshaler, ok := genericMarshaler.(pmetric.Marshaler)
 	if !ok {
-		return nil, errors.New("genericMarshaler does not implement pmetric.Marshaler")
+		return nil, errors.New("marshaler does not implement pmetric.Marshaler")
 	}
 	return metricsMarshaler.MarshalMetrics, nil
 }
@@ -38,7 +38,7 @@ var _ PickFunc[pmetric.Metrics] = PickMarshalMetrics
 func PickMarshalTraces(genericMarshaler GenericMarshaler) (MarshalFunc[ptrace.Traces], error) {
 	tracesMarshaler, ok := genericMarshaler.(ptrace.Marshaler)
 	if !ok {
-		return nil, errors.New("genericMarshaler does not implement ptrace.Marshaler")
+		return nil, errors.New("marshaler does not implement ptrace.Marshaler")
 	}
 	return tracesMarshaler.MarshalTraces, nil
 }

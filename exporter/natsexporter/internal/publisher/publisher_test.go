@@ -10,13 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPublisher(t *testing.T) {
+func TestCoreNatsPublisher(t *testing.T) {
 	t.Parallel()
 
+	subject := "test"
+	data := []byte("test")
+
 	s, err := server.NewServer(&server.Options{
-		Port:      server.RANDOM_PORT,
-		StoreDir:  t.TempDir(),
-		JetStream: true,
+		Port: server.RANDOM_PORT,
 	})
 	require.NoError(t, err)
 	s.Start()
@@ -26,55 +27,85 @@ func TestPublisher(t *testing.T) {
 
 	nc, err := nats.Connect(s.ClientURL())
 	require.NoError(t, err)
-	t.Cleanup(func() {
-		nc.Close()
+
+	subscription, err := nc.SubscribeSync(subject)
+	require.NoError(t, err)
+
+	var natsOptions NatsOptions
+	natsOptions.SetURL(s.ClientURL())
+
+	publisher, err := NewCoreNatsPublisher(&natsOptions)
+	assert.NoError(t, err)
+
+	err = publisher.Connect()
+	assert.NoError(t, err)
+
+	err = publisher.Publish(t.Context(), subject, data)
+	assert.NoError(t, err)
+
+	msg, err := subscription.NextMsgWithContext(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, subject, msg.Subject)
+	assert.Equal(t, data, msg.Data)
+
+	err = publisher.Disconnect()
+	assert.NoError(t, err)
+}
+
+func TestJetStreamPublisher(t *testing.T) {
+	t.Parallel()
+
+	subject := "test"
+	data := []byte("test")
+
+	s, err := server.NewServer(&server.Options{
+		Port:      server.RANDOM_PORT,
+		JetStream: true,
+		StoreDir:  t.TempDir(),
 	})
+	require.NoError(t, err)
+	s.Start()
+	t.Cleanup(func() {
+		s.Shutdown()
+	})
+
+	nc, err := nats.Connect(s.ClientURL())
+	require.NoError(t, err)
 
 	js, err := jetstream.New(nc)
 	require.NoError(t, err)
-	t.Cleanup(func() {
-		js.CleanupPublisher()
-	})
 
-	js.CreateStream(t.Context(), jetstream.StreamConfig{
+	stream, err := js.CreateStream(t.Context(), jetstream.StreamConfig{
 		Name:     "STREAM",
-		Subjects: []string{"test"},
+		Subjects: []string{subject},
 	})
 	require.NoError(t, err)
 
-	t.Run("CoreNatsPublisher", func(t *testing.T) {
-		var natsOptions NatsOptions
-		natsOptions.SetURL(s.ClientURL())
+	consumer, err := stream.CreateConsumer(t.Context(), jetstream.ConsumerConfig{})
+	require.NoError(t, err)
 
-		publisher, err := NewCoreNatsPublisher(&natsOptions)
-		require.NoError(t, err)
+	messagesContext, err := consumer.Messages()
+	require.NoError(t, err)
 
-		err = publisher.Connect()
-		assert.NoError(t, err)
+	var natsOptions NatsOptions
+	natsOptions.SetURL(s.ClientURL())
 
-		err = publisher.Publish(t.Context(), "test", []byte("test"))
-		assert.NoError(t, err)
+	var jetStreamOptions JetStreamOptions
 
-		err = publisher.Disconnect()
-		assert.NoError(t, err)
-	})
+	publisher, err := NewJetStreamPublisher(&natsOptions, &jetStreamOptions)
+	assert.NoError(t, err)
 
-	t.Run("JetStreamPublisher", func(t *testing.T) {
-		var natsOptions NatsOptions
-		natsOptions.SetURL(s.ClientURL())
+	err = publisher.Connect()
+	assert.NoError(t, err)
 
-		var jetStreamOptions JetStreamOptions
+	err = publisher.Publish(t.Context(), subject, data)
+	assert.NoError(t, err)
 
-		publisher, err := NewJetStreamPublisher(&natsOptions, &jetStreamOptions)
-		require.NoError(t, err)
+	message, err := messagesContext.Next()
+	require.NoError(t, err)
+	assert.Equal(t, subject, message.Subject())
+	assert.Equal(t, data, message.Data())
 
-		err = publisher.Connect()
-		assert.NoError(t, err)
-
-		err = publisher.Publish(t.Context(), "test", []byte("test"))
-		assert.NoError(t, err)
-
-		err = publisher.Disconnect()
-		assert.NoError(t, err)
-	})
+	err = publisher.Disconnect()
+	assert.NoError(t, err)
 }

@@ -5,7 +5,6 @@ package grouper // import "github.com/open-telemetry/opentelemetry-collector-con
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"go.opentelemetry.io/collector/component"
@@ -52,13 +51,13 @@ func (g *logsGrouper) Group(ctx context.Context, srcLogs plog.Logs) ([]Group[plo
 					srcResourceLogs,
 				))
 				if err != nil {
-					errs = multierr.Append(errs, errors.New("failed to evaluate logs subject expression"))
+					errs = multierr.Append(errs, err)
 					continue
 				}
 
 				subject, ok := subjectAsAny.(string)
 				if !ok {
-					errs = multierr.Append(errs, errors.New("constructed logs subject is not a string"))
+					errs = multierr.Append(errs, fmt.Errorf("logs subject is not a string: %v", subjectAsAny))
 					continue
 				}
 
@@ -115,12 +114,12 @@ func NewLogsGrouper(subjectExpression string, telemetrySettings component.Teleme
 		telemetrySettings,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create parser for logs subject expression: %w", err)
+		return nil, err
 	}
 
 	valueExpression, err := parser.ParseValueExpression(subjectExpression)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse logs subject expression: %w", err)
+		return nil, err
 	}
 
 	return &logsGrouper{

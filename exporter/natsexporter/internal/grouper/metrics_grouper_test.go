@@ -4,7 +4,7 @@
 package grouper
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -42,12 +42,12 @@ func groupMetrics(t *testing.T, subject string, srcMetrics pmetric.Metrics) ([]G
 			resourceMetrics,
 		))
 		if err != nil {
-			return "", errors.New("failed to evaluate metrics subject expression")
+			return "", err
 		}
 
 		subject, ok := subjectAsAny.(string)
 		if !ok {
-			return "", errors.New("constructed metrics subject is not a string")
+			return "", fmt.Errorf("metrics subject is not a string: %v", subjectAsAny)
 		}
 		return subject, nil
 	}

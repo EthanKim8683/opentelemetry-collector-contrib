@@ -4,7 +4,7 @@
 package grouper
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -41,12 +41,12 @@ func groupLogs(t *testing.T, subject string, srcLogs plog.Logs) ([]Group[plog.Lo
 			resourceLogs,
 		))
 		if err != nil {
-			return "", errors.New("failed to evaluate logs subject expression")
+			return "", err
 		}
 
 		subject, ok := subjectAsAny.(string)
 		if !ok {
-			return "", errors.New("constructed logs subject is not a string")
+			return "", fmt.Errorf("logs subject is not a string: %v", subjectAsAny)
 		}
 		return subject, nil
 	}

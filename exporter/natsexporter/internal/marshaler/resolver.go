@@ -94,7 +94,7 @@ var _ Resolver = (*encodingExtensionResolver)(nil)
 func NewEncodingExtensionResolver(encodingExtensionName []byte) (Resolver, error) {
 	var id component.ID
 	if err := id.UnmarshalText(encodingExtensionName); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal encoding extension name: %w", err)
+		return nil, err
 	}
 
 	return &encodingExtensionResolver{
