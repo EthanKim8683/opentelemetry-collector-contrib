@@ -28,27 +28,27 @@ func NewFactory() exporter.Factory {
 
 func createDefaultConfig() component.Config {
 	return Config{
-		natsConfig: natsConfig{
-			Endpoint: nats.DefaultURL,
-			TLS:      configtls.NewDefaultClientConfig(),
-			Pedantic: true,
-			Auth:     authConfig{},
+		NatsConfig: natsConfig{
+			Endpoint:   nats.DefaultURL,
+			TLS:        configtls.NewDefaultClientConfig(),
+			Pedantic:   true,
+			AuthConfig: authConfig{},
 		},
-		Logs: logsConfig{
+		LogsConfig: logsConfig{
 			Subject: "\"otel_logs\"",
-			resolverConfig: resolverConfig{
+			ResolverConfig: resolverConfig{
 				MarshalerName: marshaler.OtlpProtoBuiltinMarshalerName,
 			},
 		},
-		Metrics: metricsConfig{
+		MetricsConfig: metricsConfig{
 			Subject: "\"otel_metrics\"",
-			resolverConfig: resolverConfig{
+			ResolverConfig: resolverConfig{
 				MarshalerName: marshaler.OtlpProtoBuiltinMarshalerName,
 			},
 		},
-		Traces: tracesConfig{
+		TracesConfig: tracesConfig{
 			Subject: "\"otel_traces\"",
-			resolverConfig: resolverConfig{
+			ResolverConfig: resolverConfig{
 				MarshalerName: marshaler.OtlpProtoBuiltinMarshalerName,
 			},
 		},

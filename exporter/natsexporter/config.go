@@ -48,38 +48,38 @@ type resolverConfig struct {
 
 type logsConfig struct {
 	Subject        string         `mapstructure:"subject"`
-	resolverConfig resolverConfig `mapstructure:",squash"`
+	ResolverConfig resolverConfig `mapstructure:",squash"`
 }
 
 type metricsConfig struct {
 	Subject        string         `mapstructure:"subject"`
-	resolverConfig resolverConfig `mapstructure:",squash"`
+	ResolverConfig resolverConfig `mapstructure:",squash"`
 }
 
 type tracesConfig struct {
 	Subject        string         `mapstructure:"subject"`
-	resolverConfig resolverConfig `mapstructure:",squash"`
+	ResolverConfig resolverConfig `mapstructure:",squash"`
 }
 
 type natsConfig struct {
-	Endpoint string                 `mapstructure:"endpoint"`
-	TLS      configtls.ClientConfig `mapstructure:"tls"`
-	Pedantic bool                   `mapstructure:"pedantic"`
-	Auth     authConfig             `mapstructure:"auth"`
+	Endpoint   string                 `mapstructure:"endpoint"`
+	TLS        configtls.ClientConfig `mapstructure:"tls"`
+	Pedantic   bool                   `mapstructure:"pedantic"`
+	AuthConfig authConfig             `mapstructure:"auth"`
 }
 
 type jetStreamConfig struct {
 	RetryWait     *time.Duration `mapstructure:"retry_wait"`
 	RetryAttempts *int           `mapstructure:"retry_attempts"`
 	StallWait     *time.Duration `mapstructure:"stall_wait"`
-	Deduplicate   *bool          `mapstructure:"deduplicate"`
+	Dedup         *bool          `mapstructure:"dedup"`
 }
 
 type Config struct {
-	natsConfig       natsConfig                      `mapstructure:",squash"`
-	Logs             logsConfig                      `mapstructure:"logs"`
-	Metrics          metricsConfig                   `mapstructure:"metrics"`
-	Traces           tracesConfig                    `mapstructure:"traces"`
-	JetStream        *jetStreamConfig                `mapstructure:"jetstream"`
+	NatsConfig       natsConfig                      `mapstructure:",squash"`
+	LogsConfig       logsConfig                      `mapstructure:"logs"`
+	MetricsConfig    metricsConfig                   `mapstructure:"metrics"`
+	TracesConfig     tracesConfig                    `mapstructure:"traces"`
+	JetStreamConfig  *jetStreamConfig                `mapstructure:"jetstream"`
 	QueueBatchConfig exporterhelper.QueueBatchConfig `mapstructure:"sending_queue"`
 }
