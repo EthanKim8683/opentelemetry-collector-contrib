@@ -7,7 +7,7 @@ import "go.opentelemetry.io/collector/component"
 
 type Marshaler[T any] struct {
 	resolver Resolver
-	pick     PickFunc[T]
+	pickFunc PickFunc[T]
 	marshal  MarshalFunc[T]
 }
 
@@ -17,7 +17,7 @@ func (m *Marshaler[T]) Resolve(host component.Host) error {
 		return err
 	}
 
-	m.marshal, err = m.pick(genericMarshaler)
+	m.marshal, err = m.pickFunc(genericMarshaler)
 	if err != nil {
 		return err
 	}
@@ -29,9 +29,9 @@ func (m *Marshaler[T]) Marshal(data T) ([]byte, error) {
 	return m.marshal(data)
 }
 
-func NewMarshaler[T any](resolver Resolver, pick PickFunc[T]) *Marshaler[T] {
+func NewMarshaler[T any](resolver Resolver, pickFunc PickFunc[T]) *Marshaler[T] {
 	return &Marshaler[T]{
 		resolver: resolver,
-		pick:     pick,
+		pickFunc: pickFunc,
 	}
 }

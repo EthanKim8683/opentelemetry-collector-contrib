@@ -7,7 +7,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/nats-io/nats.go"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/pdata/plog"
@@ -23,7 +22,6 @@ import (
 type natsExporter[T any] struct {
 	set       exporter.Settings
 	cfg       *Config
-	options   *nats.Options
 	grouper   grouper.Grouper[T]
 	marshaler *marshaler.Marshaler[T]
 	publisher publisher.Publisher
@@ -32,14 +30,12 @@ type natsExporter[T any] struct {
 func newNatsExporter[T any](
 	set exporter.Settings,
 	cfg *Config,
-	options *nats.Options,
 	grouper grouper.Grouper[T],
 	marshaler *marshaler.Marshaler[T],
 ) *natsExporter[T] {
 	return &natsExporter[T]{
 		set:       set,
 		cfg:       cfg,
-		options:   options,
 		grouper:   grouper,
 		marshaler: marshaler,
 	}
@@ -48,7 +44,7 @@ func newNatsExporter[T any](
 func (e *natsExporter[T]) start(_ context.Context, host component.Host) error {
 	var errs error
 	errs = multierr.Append(errs, e.marshaler.Resolve(host))
-	errs = multierr.Append(errs, e.publisher.Start())
+	errs = multierr.Append(errs, e.publisher.Connect())
 	return errs
 }
 
@@ -90,16 +86,19 @@ func (e *natsExporter[T]) export(ctx context.Context, data T) error {
 }
 
 func (e *natsExporter[T]) shutdown(_ context.Context) error {
-	return e.publisher.Shutdown()
+	return e.publisher.Disconnect()
 }
 
 func newNatsLogsExporter(set exporter.Settings, cfg *Config) (*natsExporter[plog.Logs], error) {
 	var errs error
+
 	grouper, err := cfg.Logs.GrouperConfig.NewGrouper(set.TelemetrySettings)
 	errs = multierr.Append(errs, err)
+
 	marshaler, err := cfg.Logs.MarshalerConfig.NewMarshaler()
 	errs = multierr.Append(errs, err)
-	return newNatsExporter(set, cfg, options, grouper, marshaler), errs
+
+	return newNatsExporter(set, cfg, grouper, marshaler), errs
 }
 
 func newNatsMetricsExporter(set exporter.Settings, cfg *Config) (*natsExporter[pmetric.Metrics], error) {

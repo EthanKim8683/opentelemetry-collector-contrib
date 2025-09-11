@@ -40,7 +40,7 @@ func newMarshalerWithFakes() *Marshaler[string] {
 func TestMarshaler(t *testing.T) {
 	t.Parallel()
 
-	t.Run("composes resolver and pick", func(t *testing.T) {
+	t.Run("composes resolver and pickFunc", func(t *testing.T) {
 		marshaler := newMarshalerWithFakes()
 
 		err := marshaler.Resolve(componenttest.NewNopHost())

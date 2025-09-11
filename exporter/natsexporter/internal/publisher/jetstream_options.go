@@ -8,47 +8,54 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
-type buildJetStreamPubOptionFunc func(data []byte) jetstream.PublishOpt
+type buildJetStreamPublishOptFunc func(data []byte) jetstream.PublishOpt
 
 type JetStreamOptions struct {
-	buildJetStreamPubOptions []buildJetStreamPubOptionFunc
+	buildPublishOptFuncs []buildJetStreamPublishOptFunc
 }
 
-func (po *JetStreamOptions) SetRetryWait(retryWait time.Duration) {
-	po.buildJetStreamPubOptions = append(po.buildJetStreamPubOptions, func(_ []byte) jetstream.PublishOpt {
+func (jso *JetStreamOptions) SetRetryWait(retryWait time.Duration) {
+	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(_ []byte) jetstream.PublishOpt {
 		return jetstream.WithRetryWait(retryWait)
 	})
 }
 
-func (po *JetStreamOptions) SetRetryAttempts(retryAttempts int) {
-	po.buildJetStreamPubOptions = append(po.buildJetStreamPubOptions, func(_ []byte) jetstream.PublishOpt {
+func (jso *JetStreamOptions) SetRetryAttempts(retryAttempts int) {
+	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(_ []byte) jetstream.PublishOpt {
 		return jetstream.WithRetryAttempts(retryAttempts)
 	})
 }
 
-func (po *JetStreamOptions) SetStallWait(stallWait time.Duration) {
-	po.buildJetStreamPubOptions = append(po.buildJetStreamPubOptions, func(_ []byte) jetstream.PublishOpt {
+func (jso *JetStreamOptions) SetStallWait(stallWait time.Duration) {
+	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(_ []byte) jetstream.PublishOpt {
 		return jetstream.WithStallWait(stallWait)
 	})
 }
 
-func (po *JetStreamOptions) SetDeduplicate(deduplicate bool) {
-	if !deduplicate {
-		return
+func (jso *JetStreamOptions) SetDeduplicate(deduplicate bool) {
+	var buildPublishOptFunc buildJetStreamPublishOptFunc
+	if deduplicate {
+		jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(data []byte) jetstream.PublishOpt {
+			hash := xxhash.Sum64(data)
+			msgID := strconv.FormatUint(hash, 16)
+			return jetstream.WithMsgID(msgID)
+		})
+	} else {
+		jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(_ []byte) jetstream.PublishOpt {
+			return jetstream.WithMsgID("")
+		})
 	}
-
-	po.buildJetStreamPubOptions = append(po.buildJetStreamPubOptions, func(data []byte) jetstream.PublishOpt {
-		hash := xxhash.Sum64(data)
-		msgID := strconv.FormatUint(hash, 16)
-
-		return jetstream.WithMsgID(msgID)
-	})
+	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, buildPublishOptFunc)
 }
 
-func (po *JetStreamOptions) buildPublishOpts(data []byte) []jetstream.PublishOpt {
-	publishOpts := make([]jetstream.PublishOpt, 0, len(po.buildJetStreamPubOptions))
-	for _, buildPublishOpts := range po.buildJetStreamPubOptions {
-		publishOpts = append(publishOpts, buildPublishOpts(data))
+func (jso *JetStreamOptions) buildJetStreamOptSlice() []jetstream.JetStreamOpt {
+	return nil
+}
+
+func (jso *JetStreamOptions) buildPublishOptSlice(data []byte) []jetstream.PublishOpt {
+	publishOptSlice := make([]jetstream.PublishOpt, 0, len(jso.buildPublishOptFuncs))
+	for _, buildPublishOptFunc := range jso.buildPublishOptFuncs {
+		publishOptSlice = append(publishOptSlice, buildPublishOptFunc(data))
 	}
-	return publishOpts
+	return publishOptSlice
 }

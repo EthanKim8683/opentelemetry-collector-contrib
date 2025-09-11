@@ -126,7 +126,7 @@ func TestMetricsGrouper(t *testing.T) {
 				slices.SortFunc(wantGroups, compareGroups)
 				slices.SortFunc(haveGroups, compareGroups)
 
-				assert.Len(t, wantGroups, len(haveGroups))
+				assert.Len(t, haveGroups, len(wantGroups))
 				for i := range len(wantGroups) {
 					assert.NoError(t, pmetrictest.CompareMetrics(
 						wantGroups[i].Data,

@@ -81,9 +81,9 @@ func TestBuiltinMarshalerResolver(t *testing.T) {
 				wantEncodedTraces, err := tt.wantTracesMarshaler.MarshalTraces(traces)
 				assert.NoError(t, err)
 
-				assert.Equal(t, wantEncodedLogs, haveEncodedLogs)
-				assert.Equal(t, wantEncodedMetrics, haveEncodedMetrics)
-				assert.Equal(t, wantEncodedTraces, haveEncodedTraces)
+				assert.Equal(t, haveEncodedLogs, wantEncodedLogs)
+				assert.Equal(t, haveEncodedMetrics, wantEncodedMetrics)
+				assert.Equal(t, haveEncodedTraces, wantEncodedTraces)
 			}
 		})
 	}
@@ -108,10 +108,10 @@ var _ component.Component = (*fakeExtension)(nil)
 func TestEncodingExtensionResolver(t *testing.T) {
 	t.Parallel()
 
-	extension := &fakeExtension{}
+	wantExtension := &fakeExtension{}
 	host := &fakeHost{
 		extensions: map[component.ID]component.Component{
-			component.NewID(component.MustNewType("extension")): extension,
+			component.NewID(component.MustNewType("extension")): wantExtension,
 		},
 	}
 
@@ -119,9 +119,9 @@ func TestEncodingExtensionResolver(t *testing.T) {
 		resolver, err := NewEncodingExtensionResolver([]byte("extension"))
 		assert.NoError(t, err)
 
-		extension, err := resolver.Resolve(host)
+		haveExtension, err := resolver.Resolve(host)
 		assert.NoError(t, err)
-		assert.Equal(t, extension, extension)
+		assert.Equal(t, wantExtension, haveExtension)
 	})
 
 	t.Run("returns error if extension not found", func(t *testing.T) {

@@ -8,55 +8,85 @@ import (
 )
 
 type Publisher interface {
+	Connect() error
 	Publish(ctx context.Context, subject string, data []byte) error
+	Disconnect() error
 }
 
 type NatsPublisher struct {
-	nc *nats.Conn
+	natsOptions *NatsOptions
+	nc          *nats.Conn
+}
+
+func (p *NatsPublisher) Connect() error {
+	nc, err := p.natsOptions.buildOptions().Connect()
+	if err != nil {
+		return err
+	}
+	p.nc = nc
+
+	return nil
 }
 
 func (p *NatsPublisher) Publish(_ context.Context, subject string, data []byte) error {
 	return p.nc.Publish(subject, data)
 }
 
+func (p *NatsPublisher) Disconnect() error {
+	// TODO: Figure out Drain
+	// return p.nc.Drain()
+	p.nc.Close()
+	return nil
+}
+
 var _ Publisher = (*NatsPublisher)(nil)
 
 func NewNatsPublisher(natsOptions *NatsOptions) (Publisher, error) {
-	nc, err := natsOptions.buildOptions().Connect()
-	if err != nil {
-		return nil, err
-	}
-
 	return &NatsPublisher{
-		nc: nc,
+		natsOptions: natsOptions,
 	}, nil
 }
 
 type JetStreamPublisher struct {
-	js               jetstream.JetStream
+	natsOptions      *NatsOptions
 	jetStreamOptions *JetStreamOptions
+	nc               *nats.Conn
+	js               jetstream.JetStream
+}
+
+func (p *JetStreamPublisher) Connect() error {
+	nc, err := p.natsOptions.buildOptions().Connect()
+	if err != nil {
+		return err
+	}
+	p.nc = nc
+
+	js, err := jetstream.New(nc, p.jetStreamOptions.buildJetStreamOptSlice()...)
+	if err != nil {
+		return err
+	}
+	p.js = js
+
+	return nil
 }
 
 func (p *JetStreamPublisher) Publish(ctx context.Context, subject string, data []byte) error {
-	_, err := p.js.Publish(ctx, subject, data, p.jetStreamOptions.buildPublishOpts(data)...)
+	_, err := p.js.Publish(ctx, subject, data, p.jetStreamOptions.buildPublishOptSlice(data)...)
 	return err
+}
+
+func (p *JetStreamPublisher) Disconnect() error {
+	// TODO: Figure out Drain
+	// return p.nc.Drain()
+	p.nc.Close()
+	return nil
 }
 
 var _ Publisher = (*JetStreamPublisher)(nil)
 
 func NewJetStreamPublisher(natsOptions *NatsOptions, jetStreamOptions *JetStreamOptions) (Publisher, error) {
-	nc, err := natsOptions.buildOptions().Connect()
-	if err != nil {
-		return nil, err
-	}
-
-	js, err := jetstream.New(nc)
-	if err != nil {
-		return nil, err
-	}
-
 	return &JetStreamPublisher{
-		js:               js,
+		natsOptions:      natsOptions,
 		jetStreamOptions: jetStreamOptions,
 	}, nil
 }
