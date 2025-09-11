@@ -49,7 +49,7 @@ func (no *NatsOptions) SetNkey(seed []byte) error {
 
 	publicKey, err := keyPair.PublicKey()
 	if err != nil {
-		return fmt.Errorf("failed to get public key from seed: %w", err)
+		return fmt.Errorf("failed to derive public key from seed: %w", err)
 	}
 
 	no.setOptionFuncs = append(no.setOptionFuncs, func(options *nats.Options) {

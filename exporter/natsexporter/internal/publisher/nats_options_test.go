@@ -139,7 +139,8 @@ func TestNatsOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		var no NatsOptions
-		no.SetNkey(seed)
+		err = no.SetNkey(seed)
+		assert.NoError(t, err)
 		options := no.buildOptions()
 
 		assert.Equal(t, pubKey, options.Nkey)
@@ -153,7 +154,8 @@ func TestNatsOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		var no NatsOptions
-		no.SetNkeyJWT(userJWT, userSeed)
+		err = no.SetNkeyJWT(userJWT, userSeed)
+		assert.NoError(t, err)
 		options := no.buildOptions()
 
 		validateUserJWTHandler(t, userJWT, options.UserJWT)
@@ -164,7 +166,8 @@ func TestNatsOptions(t *testing.T) {
 		userJWT, userKeyPair, userFilePath := createNkeyUserFile(t)
 
 		var no NatsOptions
-		no.SetNkeyUserFile(userFilePath)
+		err := no.SetNkeyUserFile(userFilePath)
+		assert.NoError(t, err)
 		options := no.buildOptions()
 
 		validateUserJWTHandler(t, userJWT, options.UserJWT)
