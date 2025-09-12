@@ -5,6 +5,10 @@ package natsexporter
 
 import (
 	"context"
+	"fmt"
+	"math/rand/v2"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/uuid"
@@ -13,6 +17,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/exporter/exportertest"
+	"go.uber.org/multierr"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/group"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
@@ -22,7 +27,15 @@ import (
 type fakeGrouper struct{}
 
 func (g *fakeGrouper) Group(ctx context.Context, data string) ([]group.Group[string], error) {
-	return []group.Group[string]{{Subject: data, Data: data}}, nil
+	tokens := strings.Split(data, ",")
+	groups := make([]group.Group[string], len(tokens))
+	for i, token := range tokens {
+		groups[i] = group.Group[string]{
+			Subject: token,
+			Data:    token,
+		}
+	}
+	return groups, nil
 }
 
 var _ group.Grouper[string] = (*fakeGrouper)(nil)
@@ -34,7 +47,11 @@ func newFakeGrouper() group.Grouper[string] {
 type fakeGenericMarshaler struct{}
 
 func (m *fakeGenericMarshaler) MarshalString(sd string) ([]byte, error) {
-	return []byte(sd), nil
+	if sd == "error" {
+		return nil, fmt.Errorf("error")
+	} else {
+		return []byte(sd), nil
+	}
 }
 
 var _ marshal.GenericMarshaler = (*fakeGenericMarshaler)(nil)
@@ -64,6 +81,7 @@ type message struct {
 
 type mockPublisher struct {
 	t        *testing.T
+	mu       sync.Mutex
 	messages []message
 }
 
@@ -72,6 +90,9 @@ func (m *mockPublisher) Connect() error {
 }
 
 func (m *mockPublisher) Publish(ctx context.Context, subject string, data []byte) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.messages = append(m.messages, message{subject: subject, data: data})
 	return nil
 }
@@ -81,6 +102,9 @@ func (m *mockPublisher) Disconnect() error {
 }
 
 func (m *mockPublisher) replay(count int) []message {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	require.GreaterOrEqual(m.t, len(m.messages), count)
 
 	var messages []message
@@ -97,33 +121,84 @@ func newMockPublisher(t *testing.T) *mockPublisher {
 func TestNatsExporter(t *testing.T) {
 	t.Parallel()
 
-	data := make([]string, 64)
-	for i := range data {
-		data[i] = uuid.NewString()
-	}
+	t.Run("composes grouper marshaler and publisher", func(t *testing.T) {
+		tokens := make([]string, 64)
+		for i := range tokens {
+			tokens[i] = uuid.NewString()
+		}
 
-	grouper := newFakeGrouper()
-	resolver := newFakeResolver()
-	marshaler := marshal.NewMarshaler(resolver, fakePick)
-	publisher := newMockPublisher(t)
-	exporter := newNatsExporter(grouper, marshaler, publisher)
+		data := strings.Join(tokens, ",")
 
-	err := exporter.start(t.Context(), componenttest.NewNopHost())
-	assert.NoError(t, err)
+		wantMessages := make([]message, 0, len(tokens))
+		for _, token := range tokens {
+			wantMessages = append(wantMessages, message{
+				subject: token,
+				data:    []byte(token),
+			})
+		}
 
-	for _, data := range data {
+		grouper := newFakeGrouper()
+		resolver := newFakeResolver()
+		marshaler := marshal.NewMarshaler(resolver, fakePick)
+		publisher := newMockPublisher(t)
+		exporter := newNatsExporter(grouper, marshaler, publisher)
+
+		err := exporter.start(t.Context(), componenttest.NewNopHost())
+		assert.NoError(t, err)
+
 		err = exporter.export(t.Context(), data)
 		assert.NoError(t, err)
-	}
 
-	err = exporter.shutdown(t.Context())
-	assert.NoError(t, err)
+		err = exporter.shutdown(t.Context())
+		assert.NoError(t, err)
 
-	messages := publisher.replay(len(data))
-	for i, messages := range messages {
-		assert.Equal(t, data[i], messages.subject)
-		assert.Equal(t, []byte(data[i]), messages.data)
-	}
+		haveMessages := publisher.replay(len(wantMessages))
+		assert.ElementsMatch(t, wantMessages, haveMessages)
+	})
+
+	t.Run("catches and returns errors", func(t *testing.T) {
+		tokens := make([]string, 64)
+		for i := range tokens {
+			if rand.IntN(2) == 0 {
+				tokens[i] = "error"
+			} else {
+				tokens[i] = uuid.NewString()
+			}
+		}
+
+		data := strings.Join(tokens, ",")
+
+		wantErrorsLen := 0
+		wantMessages := make([]message, 0, len(tokens))
+		for _, token := range tokens {
+			if token == "error" {
+				wantErrorsLen++
+			} else {
+				wantMessages = append(wantMessages, message{
+					subject: token,
+					data:    []byte(token),
+				})
+			}
+		}
+
+		grouper := newFakeGrouper()
+		resolver := newFakeResolver()
+		marshaler := marshal.NewMarshaler(resolver, fakePick)
+		publisher := newMockPublisher(t)
+		exporter := newNatsExporter(grouper, marshaler, publisher)
+
+		err := exporter.start(t.Context(), componenttest.NewNopHost())
+		assert.NoError(t, err)
+
+		err = exporter.export(t.Context(), data)
+		assert.Equal(t, wantErrorsLen, len(multierr.Errors(err)))
+
+		err = exporter.shutdown(t.Context())
+		assert.NoError(t, err)
+
+		haveMessages := publisher.replay(len(wantMessages))
+		assert.ElementsMatch(t, wantMessages, haveMessages)
+	})
 }
 
 func TestNewResolver(t *testing.T) {

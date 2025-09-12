@@ -51,7 +51,7 @@ func (e *natsExporter[T]) export(ctx context.Context, data T) error {
 	errs = multierr.Append(errs, err)
 
 	var wg sync.WaitGroup
-	errCh := make(chan error)
+	errCh := make(chan error, len(groups))
 	for _, group := range groups {
 		var (
 			subject = group.Subject
