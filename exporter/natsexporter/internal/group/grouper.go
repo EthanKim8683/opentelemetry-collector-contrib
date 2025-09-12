@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package grouper // import "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/grouper"
+package group // import "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/group"
 
 import (
 	"context"

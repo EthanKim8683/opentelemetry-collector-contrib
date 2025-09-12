@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 
 	"github.com/nats-io/nats.go"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshaler"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/metadata"
 )
 
@@ -27,29 +27,29 @@ func NewFactory() exporter.Factory {
 }
 
 func createDefaultConfig() component.Config {
-	return Config{
-		NatsConfig: natsConfig{
+	return &Config{
+		NatsConfig: NatsConfig{
 			Endpoint:   nats.DefaultURL,
 			TLS:        configtls.NewDefaultClientConfig(),
 			Pedantic:   true,
-			AuthConfig: authConfig{},
+			AuthConfig: AuthConfig{},
 		},
-		LogsConfig: logsConfig{
+		LogsConfig: LogsConfig{
 			Subject: "\"otel_logs\"",
-			ResolverConfig: resolverConfig{
-				MarshalerName: marshaler.OtlpProtoBuiltinMarshalerName,
+			ResolverConfig: ResolverConfig{
+				MarshalerName: marshal.OtlpProtoBuiltinMarshalerName,
 			},
 		},
-		MetricsConfig: metricsConfig{
+		MetricsConfig: MetricsConfig{
 			Subject: "\"otel_metrics\"",
-			ResolverConfig: resolverConfig{
-				MarshalerName: marshaler.OtlpProtoBuiltinMarshalerName,
+			ResolverConfig: ResolverConfig{
+				MarshalerName: marshal.OtlpProtoBuiltinMarshalerName,
 			},
 		},
-		TracesConfig: tracesConfig{
+		TracesConfig: TracesConfig{
 			Subject: "\"otel_traces\"",
-			ResolverConfig: resolverConfig{
-				MarshalerName: marshaler.OtlpProtoBuiltinMarshalerName,
+			ResolverConfig: ResolverConfig{
+				MarshalerName: marshal.OtlpProtoBuiltinMarshalerName,
 			},
 		},
 		QueueBatchConfig: exporterhelper.NewDefaultQueueConfig(),

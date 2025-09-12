@@ -6,69 +6,69 @@ package natsexporter // import "github.com/open-telemetry/opentelemetry-collecto
 import (
 	"time"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshaler"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
 	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 )
 
-type tokenConfig struct {
+type TokenConfig struct {
 	Token string `mapstructure:"token"`
 }
 
-type userConfig struct {
+type UserConfig struct {
 	Username string `mapstructure:"username"`
 	Password string `mapstructure:"password"`
 }
 
-type nkeyConfig struct {
+type NkeyConfig struct {
 	Seed []byte `mapstructure:"seed"`
 }
 
-type nkeyJWTConfig struct {
+type NkeyJWTConfig struct {
 	JWT  string `mapstructure:"jwt"`
 	Seed []byte `mapstructure:"seed"`
 }
 
-type nkeyUserFileConfig struct {
-	UserFilePath string `mapstructure:"user_file_path"`
+type NkeyUserFileConfig struct {
+	UserFilePath string `mapstructure:"user_file"`
 }
 
-type authConfig struct {
-	Token        *tokenConfig        `mapstructure:"token"`
-	User         *userConfig         `mapstructure:"user"`
-	Nkey         *nkeyConfig         `mapstructure:"nkey"`
-	NkeyJWT      *nkeyJWTConfig      `mapstructure:"nkey_jwt"`
-	NkeyUserFile *nkeyUserFileConfig `mapstructure:"nkey_user_file"`
+type AuthConfig struct {
+	Token        *TokenConfig        `mapstructure:"token"`
+	User         *UserConfig         `mapstructure:"user"`
+	Nkey         *NkeyConfig         `mapstructure:"nkey"`
+	NkeyJWT      *NkeyJWTConfig      `mapstructure:"nkey_jwt"`
+	NkeyUserFile *NkeyUserFileConfig `mapstructure:"nkey_user_file"`
 }
 
-type resolverConfig struct {
-	MarshalerName         marshaler.BuiltinMarshalerName `mapstructure:"marshaler"`
-	EncodingExtensionName []byte                         `mapstructure:"encoding_extension"`
+type ResolverConfig struct {
+	MarshalerName         marshal.BuiltinMarshalerName `mapstructure:"marshaler"`
+	EncodingExtensionName []byte                       `mapstructure:"encoding_extension"`
 }
 
-type logsConfig struct {
+type LogsConfig struct {
 	Subject        string         `mapstructure:"subject"`
-	ResolverConfig resolverConfig `mapstructure:",squash"`
+	ResolverConfig ResolverConfig `mapstructure:",squash"`
 }
 
-type metricsConfig struct {
+type MetricsConfig struct {
 	Subject        string         `mapstructure:"subject"`
-	ResolverConfig resolverConfig `mapstructure:",squash"`
+	ResolverConfig ResolverConfig `mapstructure:",squash"`
 }
 
-type tracesConfig struct {
+type TracesConfig struct {
 	Subject        string         `mapstructure:"subject"`
-	ResolverConfig resolverConfig `mapstructure:",squash"`
+	ResolverConfig ResolverConfig `mapstructure:",squash"`
 }
 
-type natsConfig struct {
+type NatsConfig struct {
 	Endpoint   string                 `mapstructure:"endpoint"`
 	TLS        configtls.ClientConfig `mapstructure:"tls"`
 	Pedantic   bool                   `mapstructure:"pedantic"`
-	AuthConfig authConfig             `mapstructure:"auth"`
+	AuthConfig AuthConfig             `mapstructure:"auth"`
 }
 
-type jetStreamConfig struct {
+type JetStreamConfig struct {
 	RetryWait     *time.Duration `mapstructure:"retry_wait"`
 	RetryAttempts *int           `mapstructure:"retry_attempts"`
 	StallWait     *time.Duration `mapstructure:"stall_wait"`
@@ -76,10 +76,10 @@ type jetStreamConfig struct {
 }
 
 type Config struct {
-	NatsConfig       natsConfig                      `mapstructure:",squash"`
-	LogsConfig       logsConfig                      `mapstructure:"logs"`
-	MetricsConfig    metricsConfig                   `mapstructure:"metrics"`
-	TracesConfig     tracesConfig                    `mapstructure:"traces"`
-	JetStreamConfig  *jetStreamConfig                `mapstructure:"jetstream"`
+	NatsConfig       NatsConfig                      `mapstructure:",squash"`
+	LogsConfig       LogsConfig                      `mapstructure:"logs"`
+	MetricsConfig    MetricsConfig                   `mapstructure:"metrics"`
+	TracesConfig     TracesConfig                    `mapstructure:"traces"`
+	JetStreamConfig  *JetStreamConfig                `mapstructure:"jetstream"`
 	QueueBatchConfig exporterhelper.QueueBatchConfig `mapstructure:"sending_queue"`
 }

@@ -14,26 +14,48 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/multierr"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/grouper"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshaler"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/publisher"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/group"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/publish"
 )
 
-func newNatsOptions(cfg *natsConfig, ctx context.Context) (*publisher.NatsOptions, error) {
+func newNatsOptions(cfg *NatsConfig) (*publish.NatsOptions, error) {
 	var errs error
 
-	tlsConfig, err := cfg.TLS.LoadTLSConfig(ctx)
+	tlsConfig, err := cfg.TLS.LoadTLSConfig(context.Background())
 	errs = multierr.Append(errs, err)
 
-	var natsOptions publisher.NatsOptions
+	var natsOptions publish.NatsOptions
+
 	natsOptions.SetURL(cfg.Endpoint)
 	natsOptions.SetTLS(tlsConfig)
 	natsOptions.SetPedantic(cfg.Pedantic)
-	natsOptions.SetToken(cfg.AuthConfig.Token.Token)
-	natsOptions.SetUser(cfg.AuthConfig.User.Username, cfg.AuthConfig.User.Password)
-	errs = multierr.Append(errs, natsOptions.SetNkey(cfg.AuthConfig.Nkey.Seed))
-	errs = multierr.Append(errs, natsOptions.SetNkeyJWT(cfg.AuthConfig.NkeyJWT.JWT, cfg.AuthConfig.NkeyJWT.Seed))
-	errs = multierr.Append(errs, natsOptions.SetNkeyUserFile(cfg.AuthConfig.NkeyUserFile.UserFilePath))
+
+	if cfg.AuthConfig.Token != nil {
+		natsOptions.SetToken(cfg.AuthConfig.Token.Token)
+	}
+	if cfg.AuthConfig.User != nil {
+		natsOptions.SetUser(
+			cfg.AuthConfig.User.Username,
+			cfg.AuthConfig.User.Password,
+		)
+	}
+	if cfg.AuthConfig.Nkey != nil {
+		errs = multierr.Append(errs, natsOptions.SetNkey(
+			cfg.AuthConfig.Nkey.Seed,
+		))
+	}
+	if cfg.AuthConfig.NkeyJWT != nil {
+		errs = multierr.Append(errs, natsOptions.SetNkeyJWT(
+			cfg.AuthConfig.NkeyJWT.JWT,
+			cfg.AuthConfig.NkeyJWT.Seed,
+		))
+	}
+	if cfg.AuthConfig.NkeyUserFile != nil {
+		errs = multierr.Append(errs, natsOptions.SetNkeyUserFile(
+			cfg.AuthConfig.NkeyUserFile.UserFilePath,
+		))
+	}
 
 	if errs != nil {
 		return nil, errs
@@ -41,8 +63,8 @@ func newNatsOptions(cfg *natsConfig, ctx context.Context) (*publisher.NatsOption
 	return &natsOptions, nil
 }
 
-func newJetStreamOptions(cfg *jetStreamConfig) *publisher.JetStreamOptions {
-	var jetStreamOptions publisher.JetStreamOptions
+func newJetStreamOptions(cfg *JetStreamConfig) *publish.JetStreamOptions {
+	var jetStreamOptions publish.JetStreamOptions
 	if cfg.RetryWait != nil {
 		jetStreamOptions.SetRetryWait(*cfg.RetryWait)
 	}
@@ -58,65 +80,62 @@ func newJetStreamOptions(cfg *jetStreamConfig) *publisher.JetStreamOptions {
 	return &jetStreamOptions
 }
 
-func newPublisher(ctx context.Context, natsCfg *natsConfig, jetStreamCfg *jetStreamConfig) (publisher.Publisher, error) {
+func newPublisher(natsCfg *NatsConfig, jetStreamCfg *JetStreamConfig) (publish.Publisher, error) {
 	var errs error
 
-	natsOptions, err := newNatsOptions(natsCfg, ctx)
+	natsOptions, err := newNatsOptions(natsCfg)
 	errs = multierr.Append(errs, err)
 
+	var publisher publish.Publisher
 	if jetStreamCfg != nil {
 		jetStreamOptions := newJetStreamOptions(jetStreamCfg)
 		errs = multierr.Append(errs, err)
 
-		if errs != nil {
-			return nil, errs
-		}
-		return publisher.NewJetStreamPublisher(natsOptions, jetStreamOptions), nil
+		publisher = publish.NewJetStreamPublisher(natsOptions, jetStreamOptions)
 	} else {
-		if errs != nil {
-			return nil, errs
-		}
-		return publisher.NewCoreNatsPublisher(natsOptions), nil
+		publisher = publish.NewCoreNatsPublisher(natsOptions)
 	}
+
+	if errs != nil {
+		return nil, errs
+	}
+	return publisher, nil
 }
 
-func newResolver(cfg *resolverConfig) (marshaler.Resolver, error) {
+func newResolver(cfg *ResolverConfig) (marshal.Resolver, error) {
 	if cfg.EncodingExtensionName != nil {
-		return marshaler.NewEncodingExtensionResolver(cfg.EncodingExtensionName)
+		return marshal.NewEncodingExtensionResolver(cfg.EncodingExtensionName)
 	} else {
-		return marshaler.NewBuiltinMarshalerResolver(cfg.MarshalerName)
+		return marshal.NewBuiltinMarshalerResolver(cfg.MarshalerName)
 	}
 }
 
 type natsExporter[T any] struct {
 	set       exporter.Settings
 	cfg       *Config
-	grouper   grouper.Grouper[T]
-	marshaler *marshaler.Marshaler[T]
-	publisher publisher.Publisher
+	grouper   group.Grouper[T]
+	marshaler *marshal.Marshaler[T]
+	publisher publish.Publisher
 }
 
 func newNatsExporter[T any](
 	set exporter.Settings,
 	cfg *Config,
-	grouper grouper.Grouper[T],
-	marshaler *marshaler.Marshaler[T],
+	grouper group.Grouper[T],
+	marshaler *marshal.Marshaler[T],
+	publisher publish.Publisher,
 ) *natsExporter[T] {
 	return &natsExporter[T]{
 		set:       set,
 		cfg:       cfg,
 		grouper:   grouper,
 		marshaler: marshaler,
+		publisher: publisher,
 	}
 }
 
-func (e *natsExporter[T]) start(ctx context.Context, host component.Host) error {
+func (e *natsExporter[T]) start(_ context.Context, host component.Host) error {
 	var errs error
-
-	publisher, err := newPublisher(ctx, &e.cfg.NatsConfig, e.cfg.JetStreamConfig)
-	errs = multierr.Append(errs, err)
-	e.publisher = publisher
-
 	errs = multierr.Append(errs, e.marshaler.Resolve(host))
 	errs = multierr.Append(errs, e.publisher.Connect())
 	return errs
@@ -166,50 +185,59 @@ func (e *natsExporter[T]) shutdown(_ context.Context) error {
 func newNatsLogsExporter(set exporter.Settings, cfg *Config) (*natsExporter[plog.Logs], error) {
 	var errs error
 
-	grouper, err := grouper.NewLogsGrouper(cfg.LogsConfig.Subject, set.TelemetrySettings)
+	grouper, err := group.NewLogsGrouper(cfg.LogsConfig.Subject, set.TelemetrySettings)
 	errs = multierr.Append(errs, err)
 
 	resolver, err := newResolver(&cfg.LogsConfig.ResolverConfig)
 	errs = multierr.Append(errs, err)
 
-	marshaler := marshaler.NewMarshaler(resolver, marshaler.PickMarshalLogs)
+	marshaler := marshal.NewMarshaler(resolver, marshal.PickMarshalLogs)
+
+	publisher, err := newPublisher(&cfg.NatsConfig, cfg.JetStreamConfig)
+	errs = multierr.Append(errs, err)
 
 	if errs != nil {
 		return nil, errs
 	}
-	return newNatsExporter(set, cfg, grouper, marshaler), nil
+	return newNatsExporter(set, cfg, grouper, marshaler, publisher), nil
 }
 
 func newNatsMetricsExporter(set exporter.Settings, cfg *Config) (*natsExporter[pmetric.Metrics], error) {
 	var errs error
 
-	grouper, err := grouper.NewMetricsGrouper(cfg.MetricsConfig.Subject, set.TelemetrySettings)
+	grouper, err := group.NewMetricsGrouper(cfg.MetricsConfig.Subject, set.TelemetrySettings)
 	errs = multierr.Append(errs, err)
 
 	resolver, err := newResolver(&cfg.MetricsConfig.ResolverConfig)
 	errs = multierr.Append(errs, err)
 
-	marshaler := marshaler.NewMarshaler(resolver, marshaler.PickMarshalMetrics)
+	marshaler := marshal.NewMarshaler(resolver, marshal.PickMarshalMetrics)
+
+	publisher, err := newPublisher(&cfg.NatsConfig, cfg.JetStreamConfig)
+	errs = multierr.Append(errs, err)
 
 	if errs != nil {
 		return nil, errs
 	}
-	return newNatsExporter(set, cfg, grouper, marshaler), nil
+	return newNatsExporter(set, cfg, grouper, marshaler, publisher), nil
 }
 
 func newNatsTracesExporter(set exporter.Settings, cfg *Config) (*natsExporter[ptrace.Traces], error) {
 	var errs error
 
-	grouper, err := grouper.NewTracesGrouper(cfg.TracesConfig.Subject, set.TelemetrySettings)
+	grouper, err := group.NewTracesGrouper(cfg.TracesConfig.Subject, set.TelemetrySettings)
 	errs = multierr.Append(errs, err)
 
 	resolver, err := newResolver(&cfg.TracesConfig.ResolverConfig)
 	errs = multierr.Append(errs, err)
 
-	marshaler := marshaler.NewMarshaler(resolver, marshaler.PickMarshalTraces)
+	marshaler := marshal.NewMarshaler(resolver, marshal.PickMarshalTraces)
+
+	publisher, err := newPublisher(&cfg.NatsConfig, cfg.JetStreamConfig)
+	errs = multierr.Append(errs, err)
 
 	if errs != nil {
 		return nil, errs
 	}
-	return newNatsExporter(set, cfg, grouper, marshaler), nil
+	return newNatsExporter(set, cfg, grouper, marshaler, publisher), nil
 }
