@@ -2,6 +2,7 @@ nats:
   endpoint: nats://localhost:1234
   tls:
   pedantic: true
+  compression: true
   logs:
     subject: "\"otel_logs\""
     marshaler: "otlp_json"
@@ -18,7 +19,7 @@ nats:
     retry_wait: 2s
     retry_attempts: 3
     stall_wait: 4s
-    dedup: true
+    deduplication: true
   sending_queue:
   auth:
     token:
