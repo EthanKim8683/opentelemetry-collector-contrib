@@ -1,203 +1,115 @@
 package natsexporter
 
-// import (
-// 	"context"
-// 	"testing"
-// 	"time"
+import (
+	"context"
+	"testing"
 
-// 	"github.com/stretchr/testify/assert"
-// 	"go.opentelemetry.io/collector/component"
-// 	"go.opentelemetry.io/collector/component/componenttest"
-// 	"go.opentelemetry.io/collector/exporter/exportertest"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/group"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/publish"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/component/componenttest"
+)
 
-// 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/grouper"
-// 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshaler"
-// 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/metadata"
-// )
+type fakeGrouper struct{}
 
-// type fakeGrouper struct{}
+func (g *fakeGrouper) Group(ctx context.Context, data string) ([]group.Group[string], error) {
+	return []group.Group[string]{{Subject: data, Data: data}}, nil
+}
 
-// func (g *fakeGrouper) Group(ctx context.Context, data string) ([]grouper.Group[string], error) {
-// 	return []grouper.Group[string]{{Subject: data, Data: data}}, nil
-// }
+var _ group.Grouper[string] = (*fakeGrouper)(nil)
 
-// var _ grouper.Grouper[string] = (*fakeGrouper)(nil)
+func newFakeGrouper() group.Grouper[string] {
+	return &fakeGrouper{}
+}
 
-// type fakeGenericMarshaler struct{}
+type fakeGenericMarshaler struct{}
 
-// func (m *fakeGenericMarshaler) MarshalString(sd string) ([]byte, error) {
-// 	return []byte(sd), nil
-// }
+func (m *fakeGenericMarshaler) MarshalString(sd string) ([]byte, error) {
+	return []byte(sd), nil
+}
 
-// var _ marshaler.GenericMarshaler = (*fakeGenericMarshaler)(nil)
+var _ marshal.GenericMarshaler = (*fakeGenericMarshaler)(nil)
 
-// type fakeResolver struct{}
+type fakeResolver struct{}
 
-// func (r *fakeResolver) Resolve(host component.Host) (marshaler.GenericMarshaler, error) {
-// 	return &fakeGenericMarshaler{}, nil
-// }
+func (r *fakeResolver) Resolve(host component.Host) (marshal.GenericMarshaler, error) {
+	return &fakeGenericMarshaler{}, nil
+}
 
-// var _ marshaler.Resolver = (*fakeResolver)(nil)
+var _ marshal.Resolver = (*fakeResolver)(nil)
 
-// func fakePick(genericMarshaler marshaler.GenericMarshaler) (marshaler.MarshalFunc[string], error) {
-// 	return genericMarshaler.(*fakeGenericMarshaler).MarshalString, nil
-// }
+func newFakeResolver() marshal.Resolver {
+	return &fakeResolver{}
+}
 
-// var _ marshaler.PickFunc[string] = fakePick
+func fakePick(genericMarshaler marshal.GenericMarshaler) (marshal.MarshalFunc[string], error) {
+	return genericMarshaler.(*fakeGenericMarshaler).MarshalString, nil
+}
 
-// func newNatsCoreExporterWithFakes(cfg *Config) *natsCoreExporter[string] {
-// 	set := exportertest.NewNopSettings(metadata.Type)
-// 	grouper := &fakeGrouper{}
-// 	resolver := &fakeResolver{}
-// 	marshaler := marshaler.NewMarshaler(resolver, fakePick)
-// 	return &natsCoreExporter[string]{
-// 		set:       set,
-// 		cfg:       cfg,
-// 		grouper:   grouper,
-// 		marshaler: marshaler,
-// 	}
-// }
+var _ marshal.PickFunc[string] = fakePick
 
-// func TestNatsCoreExporter(t *testing.T) {
-// 	t.Parallel()
+type message struct {
+	subject string
+	data    []byte
+}
 
-// 	withTestServer(t, func(cfg *Config, recorder *recorder) {
-// 		exporter := newNatsCoreExporterWithFakes(cfg)
+type mockPublisher struct {
+	t        *testing.T
+	messages []message
+}
 
-// 		err := exporter.start(t.Context(), componenttest.NewNopHost())
-// 		assert.NoError(t, err)
+func (m *mockPublisher) Connect() error {
+	return nil
+}
 
-// 		err = exporter.export(t.Context(), "test")
-// 		assert.NoError(t, err)
-// 		err = exporter.export(t.Context(), "test")
-// 		assert.NoError(t, err)
+func (m *mockPublisher) Publish(ctx context.Context, subject string, data []byte) error {
+	m.messages = append(m.messages, message{subject: subject, data: data})
+	return nil
+}
 
-// 		err = exporter.shutdown(t.Context())
-// 		assert.NoError(t, err)
+func (m *mockPublisher) Disconnect() error {
+	return nil
+}
 
-// 		msgs := recorder.record(2, 5*time.Second)
-// 		for _, msg := range msgs {
-// 			t.Logf("%s: %s", msg.Subject, string(msg.Data))
-// 		}
-// 	})
-// }
+func (m *mockPublisher) expect(count int) []message {
+	require.GreaterOrEqual(m.t, len(m.messages), count)
 
-// func TestNewNatsCoreLogsExporter(t *testing.T) {
-// 	t.Parallel()
+	var messages []message
+	messages, m.messages = m.messages[:count], m.messages[count:]
+	return messages
+}
 
-// 	withTestServer(t, func(cfg *Config, recorder *recorder) {
-// 		set := exportertest.NewNopSettings(metadata.Type)
-// 		exporter, err := newNatsCoreLogsExporter(set, cfg)
-// 		assert.NoError(t, err)
+var _ publish.Publisher = (*mockPublisher)(nil)
 
-// 		err = exporter.start(t.Context(), componenttest.NewNopHost())
-// 		assert.NoError(t, err)
+func newMockPublisher(t *testing.T) *mockPublisher {
+	return &mockPublisher{t: t}
+}
 
-// 		err = exporter.export(t.Context(), generateLifecycleTestLogs())
-// 		assert.NoError(t, err)
-// 		err = exporter.export(t.Context(), generateLifecycleTestLogs())
-// 		assert.NoError(t, err)
+func TestNatsCoreExporter(t *testing.T) {
+	t.Parallel()
 
-// 		err = exporter.shutdown(t.Context())
-// 		assert.NoError(t, err)
+	grouper := newFakeGrouper()
+	resolver := newFakeResolver()
+	marshaler := marshal.NewMarshaler(resolver, fakePick)
+	publisher := newMockPublisher(t)
+	exporter := newNatsExporter(grouper, marshaler, publisher)
 
-// 		msgs := recorder.record(2, 5*time.Second)
-// 		for _, msg := range msgs {
-// 			t.Logf("%s: %s", msg.Subject, string(msg.Data))
-// 		}
-// 	})
-// }
+	err := exporter.start(t.Context(), componenttest.NewNopHost())
+	assert.NoError(t, err)
 
-// func TestNewNatsCoreMetricsExporter(t *testing.T) {
-// 	t.Parallel()
+	err = exporter.export(t.Context(), "test")
+	assert.NoError(t, err)
+	err = exporter.export(t.Context(), "test")
+	assert.NoError(t, err)
 
-// 	withTestServer(t, func(cfg *Config, recorder *recorder) {
-// 		set := exportertest.NewNopSettings(metadata.Type)
-// 		exporter, err := newNatsCoreMetricsExporter(set, cfg)
-// 		assert.NoError(t, err)
+	err = exporter.shutdown(t.Context())
+	assert.NoError(t, err)
 
-// 		err = exporter.start(t.Context(), componenttest.NewNopHost())
-// 		assert.NoError(t, err)
-
-// 		err = exporter.export(t.Context(), generateLifecycleTestMetrics())
-// 		assert.NoError(t, err)
-// 		err = exporter.export(t.Context(), generateLifecycleTestMetrics())
-// 		assert.NoError(t, err)
-
-// 		err = exporter.shutdown(t.Context())
-// 		assert.NoError(t, err)
-
-// 		msgs := recorder.record(2, 5*time.Second)
-// 		for _, msg := range msgs {
-// 			t.Logf("%s: %s", msg.Subject, string(msg.Data))
-// 		}
-// 	})
-// }
-
-// func TestNewNatsCoreTracesExporter(t *testing.T) {
-// 	t.Parallel()
-
-// 	withTestServer(t, func(cfg *Config, recorder *recorder) {
-// 		set := exportertest.NewNopSettings(metadata.Type)
-// 		exporter, err := newNatsCoreTracesExporter(set, cfg)
-// 		assert.NoError(t, err)
-
-// 		err = exporter.start(t.Context(), componenttest.NewNopHost())
-// 		assert.NoError(t, err)
-
-// 		err = exporter.export(t.Context(), generateLifecycleTestTraces())
-// 		assert.NoError(t, err)
-// 		err = exporter.export(t.Context(), generateLifecycleTestTraces())
-// 		assert.NoError(t, err)
-
-// 		err = exporter.shutdown(t.Context())
-// 		assert.NoError(t, err)
-
-// 		msgs := recorder.record(2, 5*time.Second)
-// 		for _, msg := range msgs {
-// 			t.Logf("%s: %s", msg.Subject, string(msg.Data))
-// 		}
-// 	})
-// }
-
-// func TestSetNatsNkeyOption(t *testing.T) {
-// 	t.Parallel()
-
-// 	withTestServer(t, func(cfg *Config, recorder *recorder) {
-// 		exporter := newNatsCoreExporterWithFakes(cfg)
-
-// 		err := exporter.start(t.Context(), componenttest.NewNopHost())
-// 		assert.NoError(t, err)
-
-// 		err = exporter.shutdown(t.Context())
-// 		assert.NoError(t, err)
-// 	})
-// }
-
-// func TestSetNatsNkeyJWTOption(t *testing.T) {
-// 	t.Parallel()
-
-// 	withTestServer(t, func(cfg *Config, recorder *recorder) {
-// 		exporter := newNatsCoreExporterWithFakes(cfg)
-
-// 		err := exporter.start(t.Context(), componenttest.NewNopHost())
-// 		assert.NoError(t, err)
-
-// 		err = exporter.shutdown(t.Context())
-// 		assert.NoError(t, err)
-// 	})
-// }
-
-// func TestSetNatsNkeyUserFileOption(t *testing.T) {
-// 	t.Parallel()
-
-// 	withTestServer(t, func(cfg *Config, recorder *recorder) {
-// 		exporter := newNatsCoreExporterWithFakes(cfg)
-
-// 		err := exporter.start(t.Context(), componenttest.NewNopHost())
-// 		assert.NoError(t, err)
-
-// 		err = exporter.shutdown(t.Context())
-// 		assert.NoError(t, err)
-// 	})
-// }
+	messages := publisher.expect(2)
+	for _, messages := range messages {
+		t.Logf("%s: %s", messages.subject, messages.data)
+	}
+}

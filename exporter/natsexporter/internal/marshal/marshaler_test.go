@@ -21,6 +21,10 @@ var _ GenericMarshaler = (*fakeGenericMarshaler)(nil)
 
 type fakeResolver struct{}
 
+func newFakeResolver() Resolver {
+	return &fakeResolver{}
+}
+
 func (r *fakeResolver) Resolve(host component.Host) (GenericMarshaler, error) {
 	return &fakeGenericMarshaler{}, nil
 }
@@ -37,7 +41,8 @@ func TestMarshaler(t *testing.T) {
 	t.Parallel()
 
 	t.Run("composes resolver and pickFunc", func(t *testing.T) {
-		marshaler := NewMarshaler(&fakeResolver{}, fakePick)
+		resolver := newFakeResolver()
+		marshaler := NewMarshaler(resolver, fakePick)
 
 		err := marshaler.Resolve(componenttest.NewNopHost())
 		assert.NoError(t, err)
