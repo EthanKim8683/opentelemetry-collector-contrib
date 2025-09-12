@@ -1,3 +1,6 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package publish
 
 import (
@@ -77,7 +80,7 @@ func validateUserJWTHandler(t *testing.T, wantUserJWT string, haveUserJWTHandler
 	assert.Equal(t, wantUserJWT, haveUserJWT)
 }
 
-func validateSignatureCB(t *testing.T, wantSignatureCB nats.SignatureHandler, haveSignatureCB nats.SignatureHandler) {
+func validateSignatureCB(t *testing.T, wantSignatureCB, haveSignatureCB nats.SignatureHandler) {
 	nonce := []byte("nonce")
 	haveSignedNonce, err := haveSignatureCB(nonce)
 	assert.NoError(t, err)
@@ -90,7 +93,7 @@ func TestNatsOptions(t *testing.T) {
 	t.Parallel()
 
 	t.Run("SetURL", func(t *testing.T) {
-		var url = "url"
+		url := "url"
 
 		var no NatsOptions
 		no.SetURL(url)
@@ -100,7 +103,7 @@ func TestNatsOptions(t *testing.T) {
 	})
 
 	t.Run("SetTLS", func(t *testing.T) {
-		var tlsConfig = &tls.Config{}
+		tlsConfig := &tls.Config{}
 
 		var no NatsOptions
 		no.SetTLS(tlsConfig)
@@ -110,7 +113,7 @@ func TestNatsOptions(t *testing.T) {
 	})
 
 	t.Run("SetPedantic", func(t *testing.T) {
-		var pedantic = true
+		pedantic := true
 
 		var no NatsOptions
 		no.SetPedantic(pedantic)
@@ -120,7 +123,7 @@ func TestNatsOptions(t *testing.T) {
 	})
 
 	t.Run("SetToken", func(t *testing.T) {
-		var token = "token"
+		token := "token"
 
 		var no NatsOptions
 		no.SetToken(token)
@@ -130,8 +133,8 @@ func TestNatsOptions(t *testing.T) {
 	})
 
 	t.Run("SetUser", func(t *testing.T) {
-		var user = "user"
-		var password = "password"
+		user := "user"
+		password := "password"
 
 		var no NatsOptions
 		no.SetUser(user, password)

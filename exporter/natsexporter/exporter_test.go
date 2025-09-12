@@ -1,16 +1,20 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package natsexporter
 
 import (
 	"context"
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/group"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/publish"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/group"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/publish"
 )
 
 type fakeGrouper struct{}
@@ -74,7 +78,7 @@ func (m *mockPublisher) Disconnect() error {
 	return nil
 }
 
-func (m *mockPublisher) expect(count int) []message {
+func (m *mockPublisher) replay(count int) []message {
 	require.GreaterOrEqual(m.t, len(m.messages), count)
 
 	var messages []message
@@ -108,7 +112,7 @@ func TestNatsCoreExporter(t *testing.T) {
 	err = exporter.shutdown(t.Context())
 	assert.NoError(t, err)
 
-	messages := publisher.expect(2)
+	messages := publisher.replay(2)
 	for _, messages := range messages {
 		t.Logf("%s: %s", messages.subject, messages.data)
 	}

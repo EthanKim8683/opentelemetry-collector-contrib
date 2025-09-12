@@ -40,15 +40,13 @@ var _ PickFunc[string] = fakePick
 func TestMarshaler(t *testing.T) {
 	t.Parallel()
 
-	t.Run("composes resolver and pickFunc", func(t *testing.T) {
-		resolver := newFakeResolver()
-		marshaler := NewMarshaler(resolver, fakePick)
+	resolver := newFakeResolver()
+	marshaler := NewMarshaler(resolver, fakePick)
 
-		err := marshaler.Resolve(componenttest.NewNopHost())
-		assert.NoError(t, err)
+	err := marshaler.Resolve(componenttest.NewNopHost())
+	assert.NoError(t, err)
 
-		marshaled, err := marshaler.Marshal("test")
-		assert.NoError(t, err)
-		assert.Equal(t, []byte("test"), marshaled)
-	})
+	marshaled, err := marshaler.Marshal("test")
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("test"), marshaled)
 }

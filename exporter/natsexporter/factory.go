@@ -6,12 +6,12 @@ package natsexporter // import "github.com/open-telemetry/opentelemetry-collecto
 import (
 	"context"
 
+	"github.com/nats-io/nats.go"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 
-	"github.com/nats-io/nats.go"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/metadata"
 )

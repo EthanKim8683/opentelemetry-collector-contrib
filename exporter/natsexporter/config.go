@@ -6,9 +6,10 @@ package natsexporter // import "github.com/open-telemetry/opentelemetry-collecto
 import (
 	"time"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
 	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
 )
 
 type TokenConfig struct {

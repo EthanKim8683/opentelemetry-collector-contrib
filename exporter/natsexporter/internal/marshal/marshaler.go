@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package marshal // import "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshaler"
+package marshal // import "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
 
 import "go.opentelemetry.io/collector/component"
 

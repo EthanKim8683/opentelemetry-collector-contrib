@@ -1,4 +1,7 @@
-package publish
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
+package publish // import "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/publish"
 
 import (
 	"context"
