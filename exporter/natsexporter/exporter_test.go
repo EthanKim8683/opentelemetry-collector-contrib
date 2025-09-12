@@ -7,10 +7,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/exporter/exportertest"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/group"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
@@ -92,8 +94,13 @@ func newMockPublisher(t *testing.T) *mockPublisher {
 	return &mockPublisher{t: t}
 }
 
-func TestNatsCoreExporter(t *testing.T) {
+func TestNatsExporter(t *testing.T) {
 	t.Parallel()
+
+	data := make([]string, 64)
+	for i := range data {
+		data[i] = uuid.NewString()
+	}
 
 	grouper := newFakeGrouper()
 	resolver := newFakeResolver()
@@ -104,16 +111,117 @@ func TestNatsCoreExporter(t *testing.T) {
 	err := exporter.start(t.Context(), componenttest.NewNopHost())
 	assert.NoError(t, err)
 
-	err = exporter.export(t.Context(), "test")
-	assert.NoError(t, err)
-	err = exporter.export(t.Context(), "test")
-	assert.NoError(t, err)
+	for _, data := range data {
+		err = exporter.export(t.Context(), data)
+		assert.NoError(t, err)
+	}
 
 	err = exporter.shutdown(t.Context())
 	assert.NoError(t, err)
 
-	messages := publisher.replay(2)
-	for _, messages := range messages {
-		t.Logf("%s: %s", messages.subject, messages.data)
+	messages := publisher.replay(len(data))
+	for i, messages := range messages {
+		assert.Equal(t, data[i], messages.subject)
+		assert.Equal(t, []byte(data[i]), messages.data)
 	}
+}
+
+func TestNewResolver(t *testing.T) {
+	t.Parallel()
+
+	t.Run("builtinMarshalerResolver", func(t *testing.T) {
+		cfg := ResolverConfig{
+			MarshalerName: marshal.OtlpProtoBuiltinMarshalerName,
+		}
+
+		haveResolver, err := newResolver(&cfg)
+		assert.NoError(t, err)
+
+		wantResolver, err := marshal.NewBuiltinMarshalerResolver(cfg.MarshalerName)
+		require.NoError(t, err)
+
+		assert.IsType(t, wantResolver, haveResolver)
+	})
+
+	t.Run("encodingExtensionResolver", func(t *testing.T) {
+		cfg := ResolverConfig{
+			MarshalerName:         marshal.OtlpProtoBuiltinMarshalerName,
+			EncodingExtensionName: []byte("encoding"),
+		}
+
+		haveResolver, err := newResolver(&cfg)
+		assert.NoError(t, err)
+
+		wantResolver, err := marshal.NewEncodingExtensionResolver(cfg.EncodingExtensionName)
+		require.NoError(t, err)
+
+		assert.IsType(t, wantResolver, haveResolver)
+	})
+}
+
+func TestNewPublisher(t *testing.T) {
+	t.Parallel()
+
+	t.Run("CoreNatsPublisher", func(t *testing.T) {
+		havePublisher, err := newPublisher(&NatsConfig{}, nil)
+		assert.NoError(t, err)
+
+		wantPublisher := publish.NewCoreNatsPublisher(&publish.NatsOptions{})
+
+		assert.IsType(t, wantPublisher, havePublisher)
+	})
+
+	t.Run("JetStreamPublisher", func(t *testing.T) {
+		havePublisher, err := newPublisher(&NatsConfig{}, &JetStreamConfig{})
+		assert.NoError(t, err)
+
+		wantPublisher := publish.NewJetStreamPublisher(&publish.NatsOptions{}, &publish.JetStreamOptions{})
+
+		assert.IsType(t, wantPublisher, havePublisher)
+	})
+}
+
+func TestNewNatsLogsExporter(t *testing.T) {
+	t.Parallel()
+
+	set := exportertest.NewNopSettings(typ)
+	cfg := createDefaultConfig().(*Config)
+
+	exporter, err := newNatsLogsExporter(set, cfg)
+	assert.NoError(t, err)
+
+	wantGrouper, err := group.NewLogsGrouper(cfg.LogsConfig.Subject, set.TelemetrySettings)
+	require.NoError(t, err)
+
+	assert.IsType(t, wantGrouper, exporter.grouper)
+}
+
+func TestNewNatsMetricsExporter(t *testing.T) {
+	t.Parallel()
+
+	set := exportertest.NewNopSettings(typ)
+	cfg := createDefaultConfig().(*Config)
+
+	exporter, err := newNatsMetricsExporter(set, cfg)
+	assert.NoError(t, err)
+
+	wantGrouper, err := group.NewMetricsGrouper(cfg.MetricsConfig.Subject, set.TelemetrySettings)
+	require.NoError(t, err)
+
+	assert.IsType(t, wantGrouper, exporter.grouper)
+}
+
+func TestNewNatsTracesExporter(t *testing.T) {
+	t.Parallel()
+
+	set := exportertest.NewNopSettings(typ)
+	cfg := createDefaultConfig().(*Config)
+
+	exporter, err := newNatsTracesExporter(set, cfg)
+	assert.NoError(t, err)
+
+	wantGrouper, err := group.NewTracesGrouper(cfg.TracesConfig.Subject, set.TelemetrySettings)
+	require.NoError(t, err)
+
+	assert.IsType(t, wantGrouper, exporter.grouper)
 }

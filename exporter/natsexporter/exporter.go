@@ -85,6 +85,14 @@ func (e *natsExporter[T]) shutdown(_ context.Context) error {
 	return e.publisher.Disconnect()
 }
 
+func newResolver(cfg *ResolverConfig) (marshal.Resolver, error) {
+	if cfg.EncodingExtensionName != nil {
+		return marshal.NewEncodingExtensionResolver(cfg.EncodingExtensionName)
+	} else {
+		return marshal.NewBuiltinMarshalerResolver(cfg.MarshalerName)
+	}
+}
+
 func newNatsOptions(cfg *NatsConfig) (*publish.NatsOptions, error) {
 	var errs error
 
@@ -166,14 +174,6 @@ func newPublisher(natsCfg *NatsConfig, jetStreamCfg *JetStreamConfig) (publish.P
 		return nil, errs
 	}
 	return publisher, nil
-}
-
-func newResolver(cfg *ResolverConfig) (marshal.Resolver, error) {
-	if cfg.EncodingExtensionName != nil {
-		return marshal.NewEncodingExtensionResolver(cfg.EncodingExtensionName)
-	} else {
-		return marshal.NewBuiltinMarshalerResolver(cfg.MarshalerName)
-	}
 }
 
 func newNatsLogsExporter(set exporter.Settings, cfg *Config) (*natsExporter[plog.Logs], error) {

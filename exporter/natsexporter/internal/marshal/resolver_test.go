@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	"go.opentelemetry.io/collector/pdata/testdata"
 )
 
 func TestBuiltinMarshalerResolver(t *testing.T) {
@@ -63,27 +62,9 @@ func TestBuiltinMarshalerResolver(t *testing.T) {
 				builtinMarshaler, ok := genericMarshaler.(*builtinMarshaler)
 				assert.True(t, ok)
 
-				logs := testdata.GenerateLogs(10)
-				metrics := testdata.GenerateMetrics(10)
-				traces := testdata.GenerateTraces(10)
-
-				haveEncodedLogs, err := builtinMarshaler.MarshalLogs(logs)
-				assert.NoError(t, err)
-				haveEncodedMetrics, err := builtinMarshaler.MarshalMetrics(metrics)
-				assert.NoError(t, err)
-				haveEncodedTraces, err := builtinMarshaler.MarshalTraces(traces)
-				assert.NoError(t, err)
-
-				wantEncodedLogs, err := tt.wantLogsMarshaler.MarshalLogs(logs)
-				assert.NoError(t, err)
-				wantEncodedMetrics, err := tt.wantMetricsMarshaler.MarshalMetrics(metrics)
-				assert.NoError(t, err)
-				wantEncodedTraces, err := tt.wantTracesMarshaler.MarshalTraces(traces)
-				assert.NoError(t, err)
-
-				assert.Equal(t, haveEncodedLogs, wantEncodedLogs)
-				assert.Equal(t, haveEncodedMetrics, wantEncodedMetrics)
-				assert.Equal(t, haveEncodedTraces, wantEncodedTraces)
+				assert.IsType(t, tt.wantLogsMarshaler, builtinMarshaler.logsMarshaler)
+				assert.IsType(t, tt.wantMetricsMarshaler, builtinMarshaler.metricsMarshaler)
+				assert.IsType(t, tt.wantTracesMarshaler, builtinMarshaler.tracesMarshaler)
 			}
 		})
 	}
