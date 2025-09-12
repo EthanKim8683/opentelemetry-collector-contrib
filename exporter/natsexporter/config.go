@@ -11,6 +11,7 @@ import (
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
@@ -22,6 +23,61 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 )
+
+func validateNkeySeed(seed []byte) error {
+	if _, err := nkeys.FromSeed(seed); err != nil {
+		return fmt.Errorf("failed to decode NKey seed: %w", err)
+	}
+	return nil
+}
+
+func validateNkeyJWT(jwtString string) error {
+	var errs error
+
+	if claims, err := jwt.Decode(jwtString); err != nil {
+		errs = multierr.Append(errs,
+			fmt.Errorf("failed to decode NKey JWT: %w", err),
+		)
+	} else {
+		validationResults := jwt.CreateValidationResults()
+		claims.Validate(validationResults)
+
+		if err := validationResults.Errors(); err != nil {
+			errs = multierr.Append(errs,
+				fmt.Errorf("failed to validate NKey JWT: %w", errors.Join(err...)),
+			)
+		}
+	}
+
+	return errs
+}
+
+func validateNkeyUserFile(userFilePath string) error {
+	var errs error
+
+	userFile, err := os.ReadFile(userFilePath)
+	if err != nil {
+		errs = multierr.Append(errs,
+			fmt.Errorf("could not read NKey user file: %w", err),
+		)
+	}
+
+	if userJWT, err := jwt.ParseDecoratedJWT(userFile); err != nil {
+		errs = multierr.Append(errs,
+			fmt.Errorf("failed to parse NKey JWT from NKey user file: %w", err),
+		)
+	} else {
+		errs = multierr.Append(errs, validateNkeyJWT(userJWT))
+	}
+
+	if _, err = jwt.ParseDecoratedNKey(userFile); err != nil {
+		errs = multierr.Append(errs,
+			fmt.Errorf("failed to parse NKey seed from NKey user file: %w", err),
+		)
+	}
+
+	return errs
+}
 
 type TokenConfig struct {
 	Token string `mapstructure:"token"`
@@ -37,11 +93,7 @@ type NkeyConfig struct {
 }
 
 func (c *NkeyConfig) Validate() error {
-	if _, err := nkeys.FromSeed(c.Seed); err != nil {
-		return fmt.Errorf("failed to decode NKey seed: %w", err)
-	}
-
-	return nil
+	return validateNkeySeed(c.Seed)
 }
 
 type NkeyJWTConfig struct {
@@ -51,19 +103,8 @@ type NkeyJWTConfig struct {
 
 func (c *NkeyJWTConfig) Validate() error {
 	var errs error
-
-	if _, err := jwt.Decode(c.JWT); err != nil {
-		errs = multierr.Append(errs,
-			fmt.Errorf("failed to decode NKey JWT: %w", err),
-		)
-	}
-
-	if _, err := nkeys.FromSeed(c.Seed); err != nil {
-		errs = multierr.Append(errs,
-			fmt.Errorf("failed to decode NKey seed: %w", err),
-		)
-	}
-
+	errs = multierr.Append(errs, validateNkeyJWT(c.JWT))
+	errs = multierr.Append(errs, validateNkeySeed(c.Seed))
 	return errs
 }
 
@@ -72,34 +113,7 @@ type NkeyUserFileConfig struct {
 }
 
 func (c *NkeyUserFileConfig) Validate() error {
-	var errs error
-
-	userFile, err := os.ReadFile(c.UserFilePath)
-	if err != nil {
-		errs = multierr.Append(errs,
-			fmt.Errorf("could not read NKey user file: %w", err),
-		)
-	}
-
-	if userJWT, err := jwt.ParseDecoratedJWT(userFile); err != nil {
-		errs = multierr.Append(errs,
-			fmt.Errorf("failed to parse NKey JWT from NKey user file: %w", err),
-		)
-	} else {
-		if _, err = jwt.Decode(userJWT); err != nil {
-			errs = multierr.Append(errs,
-				fmt.Errorf("failed to decode NKey JWT: %w", err),
-			)
-		}
-	}
-
-	if _, err = jwt.ParseDecoratedNKey(userFile); err != nil {
-		errs = multierr.Append(errs,
-			fmt.Errorf("failed to parse NKey seed from NKey user file: %w", err),
-		)
-	}
-
-	return errs
+	return validateNkeyUserFile(c.UserFilePath)
 }
 
 type AuthConfig struct {
@@ -143,6 +157,10 @@ type ResolverConfig struct {
 
 func (c *ResolverConfig) Validate() error {
 	if c.EncodingExtensionName != nil {
+		var id component.ID
+		if err := id.UnmarshalText(c.EncodingExtensionName); err != nil {
+			return fmt.Errorf("invalid encoding extension name: %w", err)
+		}
 		return nil
 	}
 

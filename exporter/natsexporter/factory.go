@@ -29,10 +29,9 @@ func NewFactory() exporter.Factory {
 func createDefaultConfig() component.Config {
 	return &Config{
 		NatsConfig: NatsConfig{
-			Endpoint:   nats.DefaultURL,
-			TLS:        configtls.NewDefaultClientConfig(),
-			Pedantic:   true,
-			AuthConfig: AuthConfig{},
+			Endpoint: nats.DefaultURL,
+			TLS:      configtls.NewDefaultClientConfig(),
+			Pedantic: true,
 		},
 		LogsConfig: LogsConfig{
 			Subject: "\"otel_logs\"",
