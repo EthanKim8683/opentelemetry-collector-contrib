@@ -85,7 +85,7 @@ func (e *natsExporter[T]) shutdown(_ context.Context) error {
 
 func newResolver(cfg *ResolverConfig) (marshal.Resolver, error) {
 	if cfg.EncodingExtensionName != nil {
-		return marshal.NewEncodingExtensionResolver(cfg.EncodingExtensionName)
+		return marshal.NewEncodingExtensionResolver([]byte(*cfg.EncodingExtensionName))
 	}
 	return marshal.NewBuiltinMarshalerResolver(cfg.MarshalerName)
 }
@@ -113,13 +113,13 @@ func newNatsOptions(cfg *NatsConfig) (*publish.NatsOptions, error) {
 	}
 	if cfg.AuthConfig.Nkey != nil {
 		errs = multierr.Append(errs, natsOptions.SetNkey(
-			cfg.AuthConfig.Nkey.Seed,
+			[]byte(cfg.AuthConfig.Nkey.Seed),
 		))
 	}
 	if cfg.AuthConfig.NkeyJWT != nil {
 		errs = multierr.Append(errs, natsOptions.SetNkeyJWT(
 			cfg.AuthConfig.NkeyJWT.JWT,
-			cfg.AuthConfig.NkeyJWT.Seed,
+			[]byte(cfg.AuthConfig.NkeyJWT.Seed),
 		))
 	}
 	if cfg.AuthConfig.NkeyUserFile != nil {

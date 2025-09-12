@@ -5,15 +5,21 @@ package natsexporter
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/metadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configtls"
+	"go.opentelemetry.io/collector/confmap/confmaptest"
+	"go.opentelemetry.io/collector/confmap/xconfmap"
+	"go.opentelemetry.io/collector/exporter/exporterhelper"
 )
 
 func createNkey(t *testing.T) (string, []byte) {
@@ -83,14 +89,14 @@ func TestNkeyConfig(t *testing.T) {
 		_, seed := createNkey(t)
 
 		cfg := &NkeyConfig{
-			Seed: seed,
+			Seed: string(seed),
 		}
 		assert.NoError(t, cfg.Validate())
 	})
 
 	t.Run("should return error for invalid seed", func(t *testing.T) {
 		cfg := &NkeyConfig{
-			Seed: []byte("invalid"),
+			Seed: "invalid",
 		}
 		assert.Error(t, cfg.Validate())
 	})
@@ -104,7 +110,7 @@ func TestNkeyJWTConfig(t *testing.T) {
 
 		cfg := &NkeyJWTConfig{
 			JWT:  userJWT,
-			Seed: userSeed,
+			Seed: string(userSeed),
 		}
 		assert.NoError(t, cfg.Validate())
 	})
@@ -114,7 +120,7 @@ func TestNkeyJWTConfig(t *testing.T) {
 
 		cfg := &NkeyJWTConfig{
 			JWT:  "invalid",
-			Seed: userSeed,
+			Seed: string(userSeed),
 		}
 		assert.Error(t, cfg.Validate())
 	})
@@ -124,7 +130,7 @@ func TestNkeyJWTConfig(t *testing.T) {
 
 		cfg := &NkeyJWTConfig{
 			JWT:  userJWT,
-			Seed: []byte("invalid"),
+			Seed: "invalid",
 		}
 		assert.Error(t, cfg.Validate())
 	})
@@ -179,11 +185,11 @@ func TestAuthConfig(t *testing.T) {
 
 		cfg := &AuthConfig{
 			Nkey: &NkeyConfig{
-				Seed: seed,
+				Seed: string(seed),
 			},
 			NkeyJWT: &NkeyJWTConfig{
 				JWT:  userJWT,
-				Seed: userSeed,
+				Seed: string(userSeed),
 			},
 			NkeyUserFile: &NkeyUserFileConfig{
 				UserFilePath: userFilePath,
@@ -212,7 +218,7 @@ func TestResolverConfig(t *testing.T) {
 
 	t.Run("should return error for invalid encoding extension name", func(t *testing.T) {
 		cfg := &ResolverConfig{
-			EncodingExtensionName: []byte("/"),
+			EncodingExtensionName: &[]string{"/"}[0],
 		}
 		assert.Error(t, cfg.Validate())
 	})
@@ -220,7 +226,7 @@ func TestResolverConfig(t *testing.T) {
 	t.Run("should return nil for unsupported built-in marshaler name and valid encoding extension name", func(t *testing.T) {
 		cfg := &ResolverConfig{
 			MarshalerName:         "unsupported",
-			EncodingExtensionName: []byte("extension"),
+			EncodingExtensionName: &[]string{"extension"}[0],
 		}
 		assert.NoError(t, cfg.Validate())
 	})
@@ -331,4 +337,67 @@ func TestConfig(t *testing.T) {
 		},
 	}
 	assert.NoError(t, cfg.Validate())
+}
+
+func TestLoadConfig(t *testing.T) {
+	t.Parallel()
+
+	wantCfg := &Config{
+		NatsConfig: NatsConfig{
+			Endpoint: "nats://localhost:1234",
+			TLS:      configtls.NewDefaultClientConfig(),
+			Pedantic: true,
+			AuthConfig: AuthConfig{
+				Token: &TokenConfig{
+					Token: "token",
+				},
+				User: &UserConfig{
+					Username: "user",
+					Password: "password",
+				},
+			},
+		},
+		LogsConfig: LogsConfig{
+			Subject: "\"otel_logs\"",
+			ResolverConfig: ResolverConfig{
+				MarshalerName:         marshal.OtlpJSONBuiltinMarshalerName,
+				EncodingExtensionName: &[]string{"encoding"}[0],
+			},
+		},
+		MetricsConfig: MetricsConfig{
+			Subject: "\"otel_metrics\"",
+			ResolverConfig: ResolverConfig{
+				MarshalerName:         marshal.OtlpJSONBuiltinMarshalerName,
+				EncodingExtensionName: &[]string{"encoding"}[0],
+			},
+		},
+		TracesConfig: TracesConfig{
+			Subject: "\"otel_traces\"",
+			ResolverConfig: ResolverConfig{
+				MarshalerName:         marshal.OtlpJSONBuiltinMarshalerName,
+				EncodingExtensionName: &[]string{"encoding"}[0],
+			},
+		},
+		JetStreamConfig: &JetStreamConfig{
+			RetryWait:     &[]time.Duration{2 * time.Second}[0],
+			RetryAttempts: &[]int{3}[0],
+			StallWait:     &[]time.Duration{4 * time.Second}[0],
+			Dedup:         &[]bool{true}[0],
+		},
+		QueueBatchConfig: exporterhelper.NewDefaultQueueConfig(),
+	}
+
+	cm, err := confmaptest.LoadConf(filepath.Join("testdata", "config.yaml"))
+	require.NoError(t, err)
+
+	id := component.NewID(metadata.Type)
+
+	sub, err := cm.Sub(id.String())
+	require.NoError(t, err)
+
+	haveCfg := createDefaultConfig()
+	require.NoError(t, sub.Unmarshal(haveCfg))
+
+	assert.NoError(t, xconfmap.Validate(haveCfg))
+	assert.Equal(t, wantCfg, haveCfg)
 }

@@ -1,13 +1,28 @@
 nats:
   endpoint: nats://localhost:1234
+  tls:
+  pedantic: true
   logs:
-    subject: "\"logs\""
+    subject: "\"otel_logs\""
     marshaler: "otlp_json"
+    encoding_extension: "encoding"
   metrics:
-    subject: "\"metrics\""
+    subject: "\"otel_metrics\""
     marshaler: "otlp_json"
+    encoding_extension: "encoding"
   traces:
-    subject: "\"traces\""
+    subject: "\"otel_traces\""
     marshaler: "otlp_json"
-  token:
-    token: "token"
+    encoding_extension: "encoding"
+  jetstream:
+    retry_wait: 2s
+    retry_attempts: 3
+    stall_wait: 4s
+    dedup: true
+  sending_queue:
+  auth:
+    token:
+      token: "token"
+    user:
+      username: "user"
+      password: "password"

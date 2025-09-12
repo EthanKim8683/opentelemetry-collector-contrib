@@ -89,22 +89,22 @@ type UserConfig struct {
 }
 
 type NkeyConfig struct {
-	Seed []byte `mapstructure:"seed"`
+	Seed string `mapstructure:"seed"`
 }
 
 func (c *NkeyConfig) Validate() error {
-	return validateNkeySeed(c.Seed)
+	return validateNkeySeed([]byte(c.Seed))
 }
 
 type NkeyJWTConfig struct {
 	JWT  string `mapstructure:"jwt"`
-	Seed []byte `mapstructure:"seed"`
+	Seed string `mapstructure:"seed"`
 }
 
 func (c *NkeyJWTConfig) Validate() error {
 	var errs error
 	errs = multierr.Append(errs, validateNkeyJWT(c.JWT))
-	errs = multierr.Append(errs, validateNkeySeed(c.Seed))
+	errs = multierr.Append(errs, validateNkeySeed([]byte(c.Seed)))
 	return errs
 }
 
@@ -152,13 +152,13 @@ func (c *AuthConfig) Validate() error {
 
 type ResolverConfig struct {
 	MarshalerName         marshal.BuiltinMarshalerName `mapstructure:"marshaler"`
-	EncodingExtensionName []byte                       `mapstructure:"encoding_extension"`
+	EncodingExtensionName *string                      `mapstructure:"encoding_extension"`
 }
 
 func (c *ResolverConfig) Validate() error {
 	if c.EncodingExtensionName != nil {
 		var id component.ID
-		if err := id.UnmarshalText(c.EncodingExtensionName); err != nil {
+		if err := id.UnmarshalText([]byte(*c.EncodingExtensionName)); err != nil {
 			return fmt.Errorf("invalid encoding extension name: %w", err)
 		}
 		return nil

@@ -230,13 +230,13 @@ func TestNewResolver(t *testing.T) {
 	t.Run("encodingExtensionResolver", func(t *testing.T) {
 		cfg := ResolverConfig{
 			MarshalerName:         marshal.OtlpProtoBuiltinMarshalerName,
-			EncodingExtensionName: []byte("encoding"),
+			EncodingExtensionName: &[]string{"encoding"}[0],
 		}
 
 		haveResolver, err := newResolver(&cfg)
 		assert.NoError(t, err)
 
-		wantResolver, err := marshal.NewEncodingExtensionResolver(cfg.EncodingExtensionName)
+		wantResolver, err := marshal.NewEncodingExtensionResolver([]byte(*cfg.EncodingExtensionName))
 		require.NoError(t, err)
 
 		assert.IsType(t, wantResolver, haveResolver)
