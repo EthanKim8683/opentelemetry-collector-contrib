@@ -36,6 +36,12 @@ func (no *NatsOptions) SetPedantic(pedantic bool) {
 	})
 }
 
+func (no *NatsOptions) SetCompression(compression bool) {
+	no.setOptionFuncs = append(no.setOptionFuncs, func(options *nats.Options) {
+		options.Compression = compression
+	})
+}
+
 func (no *NatsOptions) SetToken(token string) {
 	no.setOptionFuncs = append(no.setOptionFuncs, func(options *nats.Options) {
 		options.Token = token

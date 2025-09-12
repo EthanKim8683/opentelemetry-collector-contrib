@@ -122,6 +122,16 @@ func TestNatsOptions(t *testing.T) {
 		assert.Equal(t, pedantic, options.Pedantic)
 	})
 
+	t.Run("SetCompression", func(t *testing.T) {
+		compression := true
+
+		var no NatsOptions
+		no.SetCompression(compression)
+		options := no.buildOptions()
+
+		assert.Equal(t, compression, options.Compression)
+	})
+
 	t.Run("SetToken", func(t *testing.T) {
 		token := "token"
 

@@ -344,9 +344,10 @@ func TestLoadConfig(t *testing.T) {
 
 	wantCfg := &Config{
 		NatsConfig: NatsConfig{
-			Endpoint: "nats://localhost:1234",
-			TLS:      configtls.NewDefaultClientConfig(),
-			Pedantic: true,
+			Endpoint:    "nats://localhost:1234",
+			TLS:         configtls.NewDefaultClientConfig(),
+			Pedantic:    true,
+			Compression: true,
 			AuthConfig: AuthConfig{
 				Token: &TokenConfig{
 					Token: "token",
@@ -382,7 +383,7 @@ func TestLoadConfig(t *testing.T) {
 			RetryWait:     &[]time.Duration{2 * time.Second}[0],
 			RetryAttempts: &[]int{3}[0],
 			StallWait:     &[]time.Duration{4 * time.Second}[0],
-			Dedup:         &[]bool{true}[0],
+			Deduplication: &[]bool{true}[0],
 		},
 		QueueBatchConfig: exporterhelper.NewDefaultQueueConfig(),
 	}

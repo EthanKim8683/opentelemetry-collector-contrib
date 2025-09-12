@@ -35,9 +35,9 @@ func (jso *JetStreamOptions) SetStallWait(stallWait time.Duration) {
 	})
 }
 
-func (jso *JetStreamOptions) SetDedup(dedup bool) {
+func (jso *JetStreamOptions) SetDeduplication(deduplication bool) {
 	var buildPublishOptFunc buildJetStreamPublishOptFunc
-	if dedup {
+	if deduplication {
 		buildPublishOptFunc = func(data []byte) jetstream.PublishOpt {
 			hash := xxhash.Sum64(data)
 			msgID := strconv.FormatUint(hash, 16)

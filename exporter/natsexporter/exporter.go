@@ -101,6 +101,7 @@ func newNatsOptions(cfg *NatsConfig) (*publish.NatsOptions, error) {
 	natsOptions.SetURL(cfg.Endpoint)
 	natsOptions.SetTLS(tlsConfig)
 	natsOptions.SetPedantic(cfg.Pedantic)
+	natsOptions.SetCompression(cfg.Compression)
 
 	if cfg.AuthConfig.Token != nil {
 		natsOptions.SetToken(cfg.AuthConfig.Token.Token)
@@ -145,8 +146,8 @@ func newJetStreamOptions(cfg *JetStreamConfig) *publish.JetStreamOptions {
 	if cfg.StallWait != nil {
 		jetStreamOptions.SetStallWait(*cfg.StallWait)
 	}
-	if cfg.Dedup != nil {
-		jetStreamOptions.SetDedup(*cfg.Dedup)
+	if cfg.Deduplication != nil {
+		jetStreamOptions.SetDeduplication(*cfg.Deduplication)
 	}
 	return &jetStreamOptions
 }

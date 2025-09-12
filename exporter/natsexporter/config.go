@@ -254,10 +254,11 @@ func (c *TracesConfig) Validate() error {
 }
 
 type NatsConfig struct {
-	Endpoint   string                 `mapstructure:"endpoint"`
-	TLS        configtls.ClientConfig `mapstructure:"tls"`
-	Pedantic   bool                   `mapstructure:"pedantic"`
-	AuthConfig AuthConfig             `mapstructure:"auth"`
+	Endpoint    string                 `mapstructure:"endpoint"`
+	TLS         configtls.ClientConfig `mapstructure:"tls"`
+	Pedantic    bool                   `mapstructure:"pedantic"`
+	Compression bool                   `mapstructure:"compression"`
+	AuthConfig  AuthConfig             `mapstructure:"auth"`
 }
 
 func (c *NatsConfig) Validate() error {
@@ -271,7 +272,7 @@ type JetStreamConfig struct {
 	RetryWait     *time.Duration `mapstructure:"retry_wait"`
 	RetryAttempts *int           `mapstructure:"retry_attempts"`
 	StallWait     *time.Duration `mapstructure:"stall_wait"`
-	Dedup         *bool          `mapstructure:"dedup"`
+	Deduplication *bool          `mapstructure:"deduplication"`
 }
 
 type Config struct {

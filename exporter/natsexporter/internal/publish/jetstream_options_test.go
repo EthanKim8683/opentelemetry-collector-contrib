@@ -103,13 +103,13 @@ func TestJetStreamOptions(t *testing.T) {
 		)
 	})
 
-	t.Run("SetDedup", func(t *testing.T) {
+	t.Run("SetDeduplication", func(t *testing.T) {
 		data := []byte("data")
 		msgID := strconv.FormatUint(xxhash.Sum64(data), 16)
 
 		t.Run("true", func(t *testing.T) {
 			var jetStreamOptions JetStreamOptions
-			jetStreamOptions.SetDedup(true)
+			jetStreamOptions.SetDeduplication(true)
 
 			pov.validatePublishOpts(
 				[]jetstream.PublishOpt{jetstream.WithMsgID(msgID)},
@@ -128,7 +128,7 @@ func TestJetStreamOptions(t *testing.T) {
 
 		t.Run("false", func(t *testing.T) {
 			var jetStreamOptions JetStreamOptions
-			jetStreamOptions.SetDedup(false)
+			jetStreamOptions.SetDeduplication(false)
 
 			pov.validatePublishOpts(
 				nil,
@@ -138,8 +138,8 @@ func TestJetStreamOptions(t *testing.T) {
 
 		t.Run("true false", func(t *testing.T) {
 			var jetStreamOptions JetStreamOptions
-			jetStreamOptions.SetDedup(true)
-			jetStreamOptions.SetDedup(false)
+			jetStreamOptions.SetDeduplication(true)
+			jetStreamOptions.SetDeduplication(false)
 
 			pov.validatePublishOpts(
 				nil,
@@ -149,9 +149,9 @@ func TestJetStreamOptions(t *testing.T) {
 
 		t.Run("true false true", func(t *testing.T) {
 			var jetStreamOptions JetStreamOptions
-			jetStreamOptions.SetDedup(true)
-			jetStreamOptions.SetDedup(false)
-			jetStreamOptions.SetDedup(true)
+			jetStreamOptions.SetDeduplication(true)
+			jetStreamOptions.SetDeduplication(false)
+			jetStreamOptions.SetDeduplication(true)
 
 			pov.validatePublishOpts(
 				[]jetstream.PublishOpt{jetstream.WithMsgID(msgID)},
