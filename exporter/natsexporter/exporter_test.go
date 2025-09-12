@@ -5,7 +5,7 @@ package natsexporter
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"math/rand/v2"
 	"strings"
 	"sync"
@@ -22,6 +22,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/group"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/marshal"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter/internal/publish"
+)
+
+const (
+	fakeMarshalError = "marshal error"
+	fakePublishError = "publish error"
 )
 
 type fakeGrouper struct{}
@@ -47,11 +52,10 @@ func newFakeGrouper() group.Grouper[string] {
 type fakeGenericMarshaler struct{}
 
 func (m *fakeGenericMarshaler) MarshalString(sd string) ([]byte, error) {
-	if sd == "error" {
-		return nil, fmt.Errorf("error")
-	} else {
-		return []byte(sd), nil
+	if sd == fakeMarshalError {
+		return nil, errors.New(fakeMarshalError)
 	}
+	return []byte(sd), nil
 }
 
 var _ marshal.GenericMarshaler = (*fakeGenericMarshaler)(nil)
@@ -90,6 +94,10 @@ func (m *mockPublisher) Connect() error {
 }
 
 func (m *mockPublisher) Publish(ctx context.Context, subject string, data []byte) error {
+	if subject == fakePublishError {
+		return errors.New(fakePublishError)
+	}
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -122,7 +130,7 @@ func TestNatsExporter(t *testing.T) {
 	t.Parallel()
 
 	t.Run("composes grouper marshaler and publisher", func(t *testing.T) {
-		tokens := make([]string, 64)
+		tokens := make([]string, 100)
 		for i := range tokens {
 			tokens[i] = uuid.NewString()
 		}
@@ -157,13 +165,13 @@ func TestNatsExporter(t *testing.T) {
 	})
 
 	t.Run("catches and returns errors", func(t *testing.T) {
-		tokens := make([]string, 64)
+		tokens := make([]string, 100)
 		for i := range tokens {
-			if rand.IntN(2) == 0 {
-				tokens[i] = "error"
-			} else {
-				tokens[i] = uuid.NewString()
-			}
+			tokens[i] = []string{
+				uuid.NewString(),
+				fakeMarshalError,
+				fakePublishError,
+			}[rand.IntN(3)]
 		}
 
 		data := strings.Join(tokens, ",")
@@ -171,9 +179,10 @@ func TestNatsExporter(t *testing.T) {
 		wantErrorsLen := 0
 		wantMessages := make([]message, 0, len(tokens))
 		for _, token := range tokens {
-			if token == "error" {
+			switch token {
+			case fakeMarshalError, fakePublishError:
 				wantErrorsLen++
-			} else {
+			default:
 				wantMessages = append(wantMessages, message{
 					subject: token,
 					data:    []byte(token),

@@ -65,10 +65,8 @@ func (e *natsExporter[T]) export(ctx context.Context, data T) error {
 				return
 			}
 
-			err = e.publisher.Publish(ctx, subject, bytes)
-			if err != nil {
+			if err = e.publisher.Publish(ctx, subject, bytes); err != nil {
 				errCh <- err
-				return
 			}
 		})
 	}
@@ -88,9 +86,8 @@ func (e *natsExporter[T]) shutdown(_ context.Context) error {
 func newResolver(cfg *ResolverConfig) (marshal.Resolver, error) {
 	if cfg.EncodingExtensionName != nil {
 		return marshal.NewEncodingExtensionResolver(cfg.EncodingExtensionName)
-	} else {
-		return marshal.NewBuiltinMarshalerResolver(cfg.MarshalerName)
 	}
+	return marshal.NewBuiltinMarshalerResolver(cfg.MarshalerName)
 }
 
 func newNatsOptions(cfg *NatsConfig) (*publish.NatsOptions, error) {
