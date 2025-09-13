@@ -36,7 +36,7 @@ func TestCoreNatsPublisher(t *testing.T) {
 		require.NoError(t, err)
 
 		var natsOptions NatsOptions
-		natsOptions.SetURL(s.ClientURL())
+		natsOptions.SetServer(s.ClientURL())
 
 		publisher := NewCoreNatsPublisher(&natsOptions)
 
@@ -97,7 +97,7 @@ func TestJetStreamPublisher(t *testing.T) {
 		require.NoError(t, err)
 
 		var natsOptions NatsOptions
-		natsOptions.SetURL(s.ClientURL())
+		natsOptions.SetServer(s.ClientURL())
 
 		var jetStreamOptions JetStreamOptions
 

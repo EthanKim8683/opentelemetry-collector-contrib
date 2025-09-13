@@ -1,5 +1,5 @@
 nats:
-  endpoint: nats://localhost:1234
+  server: nats://localhost:1234
   tls:
   pedantic: true
   compression: true

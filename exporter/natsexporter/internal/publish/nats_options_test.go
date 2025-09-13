@@ -92,14 +92,27 @@ func validateSignatureCB(t *testing.T, wantSignatureCB, haveSignatureCB nats.Sig
 func TestNatsOptions(t *testing.T) {
 	t.Parallel()
 
-	t.Run("SetURL", func(t *testing.T) {
-		url := "url"
+	t.Run("SetServer", func(t *testing.T) {
+		server := "server"
 
 		var no NatsOptions
-		no.SetURL(url)
+		no.SetServer(server)
 		options := no.buildOptions()
 
-		assert.Equal(t, url, options.Url)
+		assert.Equal(t, server, options.Url)
+	})
+
+	t.Run("SetServers", func(t *testing.T) {
+		servers := []string{
+			"server1",
+			"server2",
+		}
+
+		var no NatsOptions
+		no.SetServers(servers)
+		options := no.buildOptions()
+
+		assert.Equal(t, servers, options.Servers)
 	})
 
 	t.Run("SetTLS", func(t *testing.T) {

@@ -27,7 +27,7 @@ func TestBuiltinMarshalerResolver(t *testing.T) {
 		wantError            error
 	}{
 		{
-			name:                 "resolves with JSON marshaler for OtlpJSONBuiltinMarshalerName",
+			name:                 "resolves to JSON marshaler for OtlpJSONBuiltinMarshalerName",
 			builtinMarshalerName: OtlpJSONBuiltinMarshalerName,
 			wantLogsMarshaler:    &plog.JSONMarshaler{},
 			wantMetricsMarshaler: &pmetric.JSONMarshaler{},
@@ -35,7 +35,7 @@ func TestBuiltinMarshalerResolver(t *testing.T) {
 			wantError:            nil,
 		},
 		{
-			name:                 "resolves with Protobuf marshaler for OtlpProtoBuiltinMarshalerName",
+			name:                 "resolves to Protobuf marshaler for OtlpProtoBuiltinMarshalerName",
 			builtinMarshalerName: OtlpProtoBuiltinMarshalerName,
 			wantLogsMarshaler:    &plog.ProtoMarshaler{},
 			wantMetricsMarshaler: &pmetric.ProtoMarshaler{},

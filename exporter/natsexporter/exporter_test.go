@@ -254,7 +254,8 @@ func TestNewNatsOptions(t *testing.T) {
 	userFilePath := createNkeyUserFile(t, 5*time.Minute)
 
 	cfg := &NatsConfig{
-		Endpoint:    "nats://localhost:4222",
+		Server:      "nats://localhost:4222",
+		Servers:     []string{},
 		TLS:         configtls.NewDefaultClientConfig(),
 		Pedantic:    true,
 		Compression: true,
@@ -283,7 +284,7 @@ func TestNewNatsOptions(t *testing.T) {
 	assert.NoError(t, err)
 
 	value := reflect.ValueOf(*natsOptions)
-	assert.Equal(t, 9, value.FieldByName("setOptionFuncs").Len())
+	assert.Equal(t, 10, value.FieldByName("setOptionFuncs").Len())
 }
 
 func TestNewJetStreamOptions(t *testing.T) {

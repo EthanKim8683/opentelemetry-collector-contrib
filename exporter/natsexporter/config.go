@@ -148,9 +148,10 @@ func (c *AuthConfig) Validate() error {
 
 // ResolverConfig is the config for the marshaler resolver.
 type ResolverConfig struct {
-	// MarshalerName is the name of the built-in marshaler.
+	// MarshalerName is the name of the built-in marshaler to resolve to.
 	MarshalerName marshal.BuiltinMarshalerName `mapstructure:"marshaler"`
-	// EncodingExtensionName is the optional name of the encoding extension. Behavior overrides MarshalerName if set.
+	// EncodingExtensionName is the optional name of the encoding extension to
+	// resolve to. If set, MarshalerName is ignored.
 	EncodingExtensionName *string `mapstructure:"encoding_extension"`
 }
 
@@ -263,8 +264,11 @@ func (c *TracesConfig) Validate() error {
 
 // NatsConfig is the config for the NATS connection.
 type NatsConfig struct {
-	// Endpoint is the NATS server endpoint.
-	Endpoint string `mapstructure:"endpoint"`
+	// Server is the NATS server URL. If Servers is non-empty, Server becomes the
+	// first server in the list of NATS server URLs.
+	Server string `mapstructure:"server"`
+	// Servers is the lists of NATS server URLs.
+	Servers []string `mapstructure:"servers"`
 	// TLS is the TLS config.
 	TLS configtls.ClientConfig `mapstructure:"tls"`
 	// Pedantic is NATS pedantic mode flag.

@@ -95,7 +95,8 @@ func newNatsOptions(cfg *NatsConfig) (*publish.NatsOptions, error) {
 
 	var natsOptions publish.NatsOptions
 
-	natsOptions.SetURL(cfg.Endpoint)
+	natsOptions.SetServer(cfg.Server)
+	natsOptions.SetServers(cfg.Servers)
 	natsOptions.SetTLS(tlsConfig)
 	natsOptions.SetPedantic(cfg.Pedantic)
 	natsOptions.SetCompression(cfg.Compression)

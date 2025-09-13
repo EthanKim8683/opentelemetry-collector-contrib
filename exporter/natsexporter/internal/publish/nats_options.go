@@ -18,9 +18,15 @@ type NatsOptions struct {
 	setOptionFuncs []setNatsOptionsFunc
 }
 
-func (no *NatsOptions) SetURL(url string) {
+func (no *NatsOptions) SetServer(url string) {
 	no.setOptionFuncs = append(no.setOptionFuncs, func(options *nats.Options) {
 		options.Url = url
+	})
+}
+
+func (no *NatsOptions) SetServers(servers []string) {
+	no.setOptionFuncs = append(no.setOptionFuncs, func(options *nats.Options) {
+		options.Servers = servers
 	})
 }
 
