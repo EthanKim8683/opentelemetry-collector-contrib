@@ -11,7 +11,6 @@ import (
 )
 
 type Publisher interface {
-	Connect() error
 	Publish(ctx context.Context, subject string, data []byte) error
 	Disconnect() error
 }
@@ -21,7 +20,11 @@ type CoreNatsPublisher struct {
 	nc          *nats.Conn
 }
 
-func (p *CoreNatsPublisher) Connect() error {
+func (p *CoreNatsPublisher) isConnected() bool {
+	return p.nc != nil && !p.nc.IsClosed()
+}
+
+func (p *CoreNatsPublisher) connect() error {
 	options := p.natsOptions.buildOptions()
 	nc, err := options.Connect()
 	if err != nil {
@@ -33,11 +36,17 @@ func (p *CoreNatsPublisher) Connect() error {
 }
 
 func (p *CoreNatsPublisher) Publish(_ context.Context, subject string, data []byte) error {
+	if !p.isConnected() {
+		if err := p.connect(); err != nil {
+			return err
+		}
+	}
+
 	return p.nc.Publish(subject, data)
 }
 
 func (p *CoreNatsPublisher) Disconnect() error {
-	if p.nc != nil {
+	if p.isConnected() {
 		if err := p.nc.Drain(); err != nil {
 			p.nc.Close()
 			return err
@@ -61,7 +70,11 @@ type JetStreamPublisher struct {
 	js               jetstream.JetStream
 }
 
-func (p *JetStreamPublisher) Connect() error {
+func (p *JetStreamPublisher) isConnected() bool {
+	return p.nc != nil && p.js != nil && !p.nc.IsClosed()
+}
+
+func (p *JetStreamPublisher) connect() error {
 	options := p.natsOptions.buildOptions()
 	nc, err := options.Connect()
 	if err != nil {
@@ -79,6 +92,12 @@ func (p *JetStreamPublisher) Connect() error {
 }
 
 func (p *JetStreamPublisher) Publish(ctx context.Context, subject string, data []byte) error {
+	if !p.isConnected() {
+		if err := p.connect(); err != nil {
+			return err
+		}
+	}
+
 	publishOpts := p.jetStreamOptions.buildPublishOpts(data)
 	if _, err := p.js.Publish(ctx, subject, data, publishOpts...); err != nil {
 		return err
@@ -87,17 +106,12 @@ func (p *JetStreamPublisher) Publish(ctx context.Context, subject string, data [
 }
 
 func (p *JetStreamPublisher) Disconnect() error {
-	if p.js != nil {
-		p.js.CleanupPublisher()
-	}
-
-	if p.nc != nil {
+	if p.isConnected() {
 		if err := p.nc.Drain(); err != nil {
 			p.nc.Close()
 			return err
 		}
 	}
-
 	return nil
 }
 

@@ -40,9 +40,6 @@ func TestCoreNatsPublisher(t *testing.T) {
 
 		publisher := NewCoreNatsPublisher(&natsOptions)
 
-		err = publisher.Connect()
-		assert.NoError(t, err)
-
 		err = publisher.Publish(t.Context(), subject, data)
 		assert.NoError(t, err)
 
@@ -105,9 +102,6 @@ func TestJetStreamPublisher(t *testing.T) {
 		var jetStreamOptions JetStreamOptions
 
 		publisher := NewJetStreamPublisher(&natsOptions, &jetStreamOptions)
-
-		err = publisher.Connect()
-		assert.NoError(t, err)
 
 		err = publisher.Publish(t.Context(), subject, data)
 		assert.NoError(t, err)
