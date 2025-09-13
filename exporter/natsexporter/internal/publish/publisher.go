@@ -37,9 +37,11 @@ func (p *CoreNatsPublisher) Publish(_ context.Context, subject string, data []by
 }
 
 func (p *CoreNatsPublisher) Disconnect() error {
-	if err := p.nc.Drain(); err != nil {
-		p.nc.Close()
-		return err
+	if p.nc != nil {
+		if err := p.nc.Drain(); err != nil {
+			p.nc.Close()
+			return err
+		}
 	}
 	return nil
 }
@@ -85,12 +87,17 @@ func (p *JetStreamPublisher) Publish(ctx context.Context, subject string, data [
 }
 
 func (p *JetStreamPublisher) Disconnect() error {
-	p.js.CleanupPublisher()
-
-	if err := p.nc.Drain(); err != nil {
-		p.nc.Close()
-		return err
+	if p.js != nil {
+		p.js.CleanupPublisher()
 	}
+
+	if p.nc != nil {
+		if err := p.nc.Drain(); err != nil {
+			p.nc.Close()
+			return err
+		}
+	}
+
 	return nil
 }
 
