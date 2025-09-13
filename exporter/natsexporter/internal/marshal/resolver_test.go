@@ -27,7 +27,7 @@ func TestBuiltinMarshalerResolver(t *testing.T) {
 		wantError            error
 	}{
 		{
-			name:                 "resolves JSON marshaler for OtlpJSONBuiltinMarshalerName",
+			name:                 "resolves with JSON marshaler for OtlpJSONBuiltinMarshalerName",
 			builtinMarshalerName: OtlpJSONBuiltinMarshalerName,
 			wantLogsMarshaler:    &plog.JSONMarshaler{},
 			wantMetricsMarshaler: &pmetric.JSONMarshaler{},
@@ -35,7 +35,7 @@ func TestBuiltinMarshalerResolver(t *testing.T) {
 			wantError:            nil,
 		},
 		{
-			name:                 "resolves Protobuf marshaler for OtlpProtoBuiltinMarshalerName",
+			name:                 "resolves with Protobuf marshaler for OtlpProtoBuiltinMarshalerName",
 			builtinMarshalerName: OtlpProtoBuiltinMarshalerName,
 			wantLogsMarshaler:    &plog.ProtoMarshaler{},
 			wantMetricsMarshaler: &pmetric.ProtoMarshaler{},
@@ -62,9 +62,27 @@ func TestBuiltinMarshalerResolver(t *testing.T) {
 				builtinMarshaler, ok := genericMarshaler.(*builtinMarshaler)
 				assert.True(t, ok)
 
-				assert.IsType(t, tt.wantLogsMarshaler, builtinMarshaler.logsMarshaler)
-				assert.IsType(t, tt.wantMetricsMarshaler, builtinMarshaler.metricsMarshaler)
-				assert.IsType(t, tt.wantTracesMarshaler, builtinMarshaler.tracesMarshaler)
+				logs := plog.NewLogs()
+				metrics := pmetric.NewMetrics()
+				traces := ptrace.NewTraces()
+
+				wantLogs, err := tt.wantLogsMarshaler.MarshalLogs(logs)
+				assert.NoError(t, err)
+				wantMetrics, err := tt.wantMetricsMarshaler.MarshalMetrics(metrics)
+				assert.NoError(t, err)
+				wantTraces, err := tt.wantTracesMarshaler.MarshalTraces(traces)
+				assert.NoError(t, err)
+
+				haveLogs, err := builtinMarshaler.MarshalLogs(logs)
+				assert.NoError(t, err)
+				haveMetrics, err := builtinMarshaler.MarshalMetrics(metrics)
+				assert.NoError(t, err)
+				haveTraces, err := builtinMarshaler.MarshalTraces(traces)
+				assert.NoError(t, err)
+
+				assert.Equal(t, wantLogs, haveLogs)
+				assert.Equal(t, wantMetrics, haveMetrics)
+				assert.Equal(t, wantTraces, haveTraces)
 			}
 		})
 	}
