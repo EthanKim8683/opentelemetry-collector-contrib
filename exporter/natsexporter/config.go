@@ -264,10 +264,10 @@ func (c *TracesConfig) Validate() error {
 
 // NatsConfig is the config for the NATS connection.
 type NatsConfig struct {
-	// Server is the NATS server URL. If Servers is non-empty, Server becomes the
-	// first server in the list of NATS server URLs.
+	// Server is the NATS server URL. If Servers is non-empty, Server specifies
+	// the first server in the list.
 	Server string `mapstructure:"server"`
-	// Servers is the lists of NATS server URLs.
+	// Servers is the lists of additional NATS server URLs.
 	Servers []string `mapstructure:"servers"`
 	// TLS is the TLS config.
 	TLS configtls.ClientConfig `mapstructure:"tls"`
