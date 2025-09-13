@@ -32,7 +32,7 @@ type publishOptValidator struct {
 	js jetstream.JetStream
 }
 
-func (pov *publishOptValidator) validatePublishOpts(
+func (v *publishOptValidator) validatePublishOpts(
 	wantPublishOpts []jetstream.PublishOpt,
 	havePublishOpts []jetstream.PublishOpt,
 ) {
@@ -40,9 +40,9 @@ func (pov *publishOptValidator) validatePublishOpts(
 	wantPublishOpts = append(wantPublishOpts, mockPublishOpt(&wantOpts))
 	havePublishOpts = append(havePublishOpts, mockPublishOpt(&haveOpts))
 
-	pov.js.Publish(pov.t.Context(), "", nil, wantPublishOpts...)
-	pov.js.Publish(pov.t.Context(), "", nil, havePublishOpts...)
-	assert.Equal(pov.t, wantOpts, haveOpts)
+	v.js.Publish(v.t.Context(), "", nil, wantPublishOpts...) //nolint:errcheck
+	v.js.Publish(v.t.Context(), "", nil, havePublishOpts...) //nolint:errcheck
+	assert.Equal(v.t, wantOpts, haveOpts)
 }
 
 func newPublishOptValidator(t *testing.T) *publishOptValidator {
@@ -65,15 +65,14 @@ func newPublishOptValidator(t *testing.T) *publishOptValidator {
 func TestJetStreamOptions(t *testing.T) {
 	t.Parallel()
 
-	pov := newPublishOptValidator(t)
-
 	t.Run("SetRetryWait", func(t *testing.T) {
 		retryWait := time.Second
 
 		var jetStreamOptions JetStreamOptions
 		jetStreamOptions.SetRetryWait(retryWait)
 
-		pov.validatePublishOpts(
+		validator := newPublishOptValidator(t)
+		validator.validatePublishOpts(
 			[]jetstream.PublishOpt{jetstream.WithRetryWait(retryWait)},
 			jetStreamOptions.buildPublishOpts(nil),
 		)
@@ -85,7 +84,8 @@ func TestJetStreamOptions(t *testing.T) {
 		var jetStreamOptions JetStreamOptions
 		jetStreamOptions.SetRetryAttempts(retryAttempts)
 
-		pov.validatePublishOpts(
+		validator := newPublishOptValidator(t)
+		validator.validatePublishOpts(
 			[]jetstream.PublishOpt{jetstream.WithRetryAttempts(retryAttempts)},
 			jetStreamOptions.buildPublishOpts(nil),
 		)
@@ -97,7 +97,8 @@ func TestJetStreamOptions(t *testing.T) {
 		var jetStreamOptions JetStreamOptions
 		jetStreamOptions.SetStallWait(stallWait)
 
-		pov.validatePublishOpts(
+		validator := newPublishOptValidator(t)
+		validator.validatePublishOpts(
 			[]jetstream.PublishOpt{jetstream.WithStallWait(stallWait)},
 			jetStreamOptions.buildPublishOpts(nil),
 		)
@@ -111,7 +112,8 @@ func TestJetStreamOptions(t *testing.T) {
 			var jetStreamOptions JetStreamOptions
 			jetStreamOptions.SetDeduplication(true)
 
-			pov.validatePublishOpts(
+			validator := newPublishOptValidator(t)
+			validator.validatePublishOpts(
 				[]jetstream.PublishOpt{jetstream.WithMsgID(msgID)},
 				jetStreamOptions.buildPublishOpts(data),
 			)
@@ -120,7 +122,8 @@ func TestJetStreamOptions(t *testing.T) {
 		t.Run("default", func(t *testing.T) {
 			var jetStreamOptions JetStreamOptions
 
-			pov.validatePublishOpts(
+			validator := newPublishOptValidator(t)
+			validator.validatePublishOpts(
 				nil,
 				jetStreamOptions.buildPublishOpts(data),
 			)
@@ -130,7 +133,8 @@ func TestJetStreamOptions(t *testing.T) {
 			var jetStreamOptions JetStreamOptions
 			jetStreamOptions.SetDeduplication(false)
 
-			pov.validatePublishOpts(
+			validator := newPublishOptValidator(t)
+			validator.validatePublishOpts(
 				nil,
 				jetStreamOptions.buildPublishOpts(data),
 			)
@@ -141,7 +145,8 @@ func TestJetStreamOptions(t *testing.T) {
 			jetStreamOptions.SetDeduplication(true)
 			jetStreamOptions.SetDeduplication(false)
 
-			pov.validatePublishOpts(
+			validator := newPublishOptValidator(t)
+			validator.validatePublishOpts(
 				nil,
 				jetStreamOptions.buildPublishOpts(data),
 			)
@@ -153,7 +158,8 @@ func TestJetStreamOptions(t *testing.T) {
 			jetStreamOptions.SetDeduplication(false)
 			jetStreamOptions.SetDeduplication(true)
 
-			pov.validatePublishOpts(
+			validator := newPublishOptValidator(t)
+			validator.validatePublishOpts(
 				[]jetstream.PublishOpt{jetstream.WithMsgID(msgID)},
 				jetStreamOptions.buildPublishOpts(data),
 			)

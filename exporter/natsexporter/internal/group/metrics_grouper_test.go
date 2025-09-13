@@ -77,9 +77,8 @@ func groupMetrics(t *testing.T, subject string, srcMetrics pmetric.Metrics) ([]G
 					subject, err := constructSubject(destResourceMetrics, destScopeMetrics, destMetric)
 					if err == nil {
 						return subject != groupSubject
-					} else {
-						return true
 					}
+					return true
 				})
 				return destScopeMetrics.Metrics().Len() == 0
 			})

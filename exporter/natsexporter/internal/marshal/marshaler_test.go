@@ -13,7 +13,7 @@ import (
 
 type fakeGenericMarshaler struct{}
 
-func (m *fakeGenericMarshaler) MarshalString(sd string) ([]byte, error) {
+func (*fakeGenericMarshaler) MarshalString(sd string) ([]byte, error) {
 	return []byte(sd), nil
 }
 
@@ -25,7 +25,7 @@ func newFakeResolver() Resolver {
 	return &fakeResolver{}
 }
 
-func (r *fakeResolver) Resolve(host component.Host) (GenericMarshaler, error) {
+func (*fakeResolver) Resolve(_ component.Host) (GenericMarshaler, error) {
 	return &fakeGenericMarshaler{}, nil
 }
 

@@ -34,7 +34,7 @@ const (
 
 type fakeGrouper struct{}
 
-func (g *fakeGrouper) Group(ctx context.Context, data string) ([]group.Group[string], error) {
+func (*fakeGrouper) Group(_ context.Context, data string) ([]group.Group[string], error) {
 	tokens := strings.Split(data, ",")
 	groups := make([]group.Group[string], len(tokens))
 	for i, token := range tokens {
@@ -54,7 +54,7 @@ func newFakeGrouper() group.Grouper[string] {
 
 type fakeGenericMarshaler struct{}
 
-func (m *fakeGenericMarshaler) MarshalString(sd string) ([]byte, error) {
+func (*fakeGenericMarshaler) MarshalString(sd string) ([]byte, error) {
 	if sd == fakeMarshalError {
 		return nil, errors.New(fakeMarshalError)
 	}
@@ -65,7 +65,7 @@ var _ marshal.GenericMarshaler = (*fakeGenericMarshaler)(nil)
 
 type fakeResolver struct{}
 
-func (r *fakeResolver) Resolve(host component.Host) (marshal.GenericMarshaler, error) {
+func (*fakeResolver) Resolve(_ component.Host) (marshal.GenericMarshaler, error) {
 	return &fakeGenericMarshaler{}, nil
 }
 
@@ -92,11 +92,11 @@ type mockPublisher struct {
 	messages []message
 }
 
-func (m *mockPublisher) Connect() error {
+func (*mockPublisher) Connect() error {
 	return nil
 }
 
-func (m *mockPublisher) Publish(ctx context.Context, subject string, data []byte) error {
+func (m *mockPublisher) Publish(_ context.Context, subject string, data []byte) error {
 	if subject == fakePublishError {
 		return errors.New(fakePublishError)
 	}
@@ -108,7 +108,7 @@ func (m *mockPublisher) Publish(ctx context.Context, subject string, data []byte
 	return nil
 }
 
-func (m *mockPublisher) Disconnect() error {
+func (*mockPublisher) Disconnect() error {
 	return nil
 }
 
@@ -203,7 +203,7 @@ func TestNatsExporter(t *testing.T) {
 		assert.NoError(t, err)
 
 		err = exporter.export(t.Context(), data)
-		assert.Equal(t, wantErrorsLen, len(multierr.Errors(err)))
+		assert.Len(t, multierr.Errors(err), wantErrorsLen)
 
 		err = exporter.shutdown(t.Context())
 		assert.NoError(t, err)

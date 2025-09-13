@@ -3,7 +3,7 @@
 
 module-sets:
   contrib-base:
-    version: v0.133.0
+    version: v0.135.0
     modules:
       - github.com/open-telemetry/opentelemetry-collector-contrib
       - github.com/open-telemetry/opentelemetry-collector-contrib/cmd/golden
@@ -60,7 +60,6 @@ module-sets:
       - github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logzioexporter
       - github.com/open-telemetry/opentelemetry-collector-contrib/exporter/mezmoexporter
       - github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter
-      - github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opencensusexporter
       - github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opensearchexporter
       - github.com/open-telemetry/opentelemetry-collector-contrib/exporter/otelarrowexporter
       - github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter
@@ -144,6 +143,7 @@ module-sets:
       - github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter
       - github.com/open-telemetry/opentelemetry-collector-contrib/internal/gopsutilenv
       - github.com/open-telemetry/opentelemetry-collector-contrib/internal/grpcutil
+      - github.com/open-telemetry/opentelemetry-collector-contrib/internal/healthcheck
       - github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig
       - github.com/open-telemetry/opentelemetry-collector-contrib/internal/kafka
       - github.com/open-telemetry/opentelemetry-collector-contrib/internal/kubelet
@@ -273,7 +273,6 @@ module-sets:
       - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/netflowreceiver
       - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nsxtreceiver
       - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ntpreceiver
-      - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/opencensusreceiver
       - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/oracledbreceiver
       - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/osqueryreceiver
       - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/otelarrowreceiver
@@ -291,7 +290,6 @@ module-sets:
       - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/redisreceiver
       - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/riakreceiver
       - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/saphanareceiver
-      - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/sapmreceiver
       - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/signalfxreceiver
       - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/simpleprometheusreceiver
       - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/simpleprometheusreceiver/examples/federation/prom-counter

@@ -18,19 +18,19 @@ type JetStreamOptions struct {
 }
 
 func (jso *JetStreamOptions) SetRetryWait(retryWait time.Duration) {
-	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(data []byte) jetstream.PublishOpt {
+	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(_ []byte) jetstream.PublishOpt {
 		return jetstream.WithRetryWait(retryWait)
 	})
 }
 
 func (jso *JetStreamOptions) SetRetryAttempts(retryAttempts int) {
-	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(data []byte) jetstream.PublishOpt {
+	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(_ []byte) jetstream.PublishOpt {
 		return jetstream.WithRetryAttempts(retryAttempts)
 	})
 }
 
 func (jso *JetStreamOptions) SetStallWait(stallWait time.Duration) {
-	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(data []byte) jetstream.PublishOpt {
+	jso.buildPublishOptFuncs = append(jso.buildPublishOptFuncs, func(_ []byte) jetstream.PublishOpt {
 		return jetstream.WithStallWait(stallWait)
 	})
 }
@@ -44,7 +44,7 @@ func (jso *JetStreamOptions) SetDeduplication(deduplication bool) {
 			return jetstream.WithMsgID(msgID)
 		}
 	} else {
-		buildPublishOptFunc = func(data []byte) jetstream.PublishOpt {
+		buildPublishOptFunc = func(_ []byte) jetstream.PublishOpt {
 			return jetstream.WithMsgID("")
 		}
 	}

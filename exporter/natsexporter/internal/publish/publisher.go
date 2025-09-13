@@ -32,7 +32,7 @@ func (p *CoreNatsPublisher) Connect() error {
 	return nil
 }
 
-func (p *CoreNatsPublisher) Publish(ctx context.Context, subject string, data []byte) error {
+func (p *CoreNatsPublisher) Publish(_ context.Context, subject string, data []byte) error {
 	return p.nc.Publish(subject, data)
 }
 
@@ -77,8 +77,8 @@ func (p *JetStreamPublisher) Connect() error {
 }
 
 func (p *JetStreamPublisher) Publish(ctx context.Context, subject string, data []byte) error {
-	_, err := p.js.Publish(ctx, subject, data, p.jetStreamOptions.buildPublishOpts(data)...)
-	if err != nil {
+	publishOpts := p.jetStreamOptions.buildPublishOpts(data)
+	if _, err := p.js.Publish(ctx, subject, data, publishOpts...); err != nil {
 		return err
 	}
 	return nil

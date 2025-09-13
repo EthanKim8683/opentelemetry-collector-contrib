@@ -24,61 +24,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 )
 
-func validateNkeySeed(seed []byte) error {
-	if _, err := nkeys.FromSeed(seed); err != nil {
-		return fmt.Errorf("failed to decode NKey seed: %w", err)
-	}
-	return nil
-}
-
-func validateNkeyJWT(userJWT string) error {
-	var errs error
-
-	if claims, err := jwt.Decode(userJWT); err != nil {
-		errs = multierr.Append(errs,
-			fmt.Errorf("failed to decode NKey user JWT: %w", err),
-		)
-	} else {
-		validationResults := jwt.CreateValidationResults()
-		claims.Validate(validationResults)
-
-		if err := validationResults.Errors(); err != nil {
-			errs = multierr.Append(errs,
-				fmt.Errorf("failed to validate NKey user JWT: %w", errors.Join(err...)),
-			)
-		}
-	}
-
-	return errs
-}
-
-func validateNkeyUserFile(userFilePath string) error {
-	var errs error
-
-	userFile, err := os.ReadFile(userFilePath)
-	if err != nil {
-		errs = multierr.Append(errs,
-			fmt.Errorf("could not read NKey user file: %w", err),
-		)
-	}
-
-	if userJWT, err := jwt.ParseDecoratedJWT(userFile); err != nil {
-		errs = multierr.Append(errs,
-			fmt.Errorf("failed to parse NKey user JWT from NKey user file: %w", err),
-		)
-	} else {
-		errs = multierr.Append(errs, validateNkeyJWT(userJWT))
-	}
-
-	if _, err = jwt.ParseDecoratedNKey(userFile); err != nil {
-		errs = multierr.Append(errs,
-			fmt.Errorf("failed to parse NKey seed from NKey user file: %w", err),
-		)
-	}
-
-	return errs
-}
-
 type TokenConfig struct {
 	Token string `mapstructure:"token"`
 }
@@ -93,7 +38,10 @@ type NkeyConfig struct {
 }
 
 func (c *NkeyConfig) Validate() error {
-	return validateNkeySeed([]byte(c.Seed))
+	if _, err := nkeys.FromSeed([]byte(c.Seed)); err != nil {
+		return fmt.Errorf("failed to decode NKey seed: %w", err)
+	}
+	return nil
 }
 
 type NkeyJWTConfig struct {
@@ -103,8 +51,19 @@ type NkeyJWTConfig struct {
 
 func (c *NkeyJWTConfig) Validate() error {
 	var errs error
-	errs = multierr.Append(errs, validateNkeyJWT(c.UserJWT))
-	errs = multierr.Append(errs, validateNkeySeed([]byte(c.Seed)))
+
+	if _, err := jwt.Decode(c.UserJWT); err != nil {
+		errs = multierr.Append(errs,
+			fmt.Errorf("failed to validate NKey user JWT: %w", err),
+		)
+	}
+
+	if _, err := nkeys.FromSeed([]byte(c.Seed)); err != nil {
+		errs = multierr.Append(errs,
+			fmt.Errorf("failed to validate NKey seed: %w", err),
+		)
+	}
+
 	return errs
 }
 
@@ -113,7 +72,26 @@ type NkeyUserFileConfig struct {
 }
 
 func (c *NkeyUserFileConfig) Validate() error {
-	return validateNkeyUserFile(c.UserFilePath)
+	userFile, err := os.ReadFile(c.UserFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to read NKey user file: %w", err)
+	}
+
+	var errs error
+
+	if _, err := jwt.ParseDecoratedJWT(userFile); err != nil {
+		errs = multierr.Append(errs,
+			fmt.Errorf("failed to parse NKey user JWT from NKey user file: %w", err),
+		)
+	}
+
+	if _, err := jwt.ParseDecoratedNKey(userFile); err != nil {
+		errs = multierr.Append(errs,
+			fmt.Errorf("failed to parse NKey seed from NKey user file: %w", err),
+		)
+	}
+
+	return errs
 }
 
 type AuthConfig struct {

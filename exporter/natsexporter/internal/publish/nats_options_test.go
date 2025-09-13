@@ -59,7 +59,7 @@ func createNkeyUserFile(t *testing.T) (string, nkeys.KeyPair, string) {
 	userConfig, err := jwt.FormatUserConfig(userJWT, userSeed)
 	require.NoError(t, err)
 
-	userFile, err := os.CreateTemp("", "")
+	userFile, err := os.CreateTemp(t.TempDir(), "")
 	require.NoError(t, err)
 	userFilePath := userFile.Name()
 	t.Cleanup(func() {

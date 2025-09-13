@@ -40,7 +40,7 @@ type builtinMarshalerResolver struct {
 	genericMarshaler GenericMarshaler
 }
 
-func (r *builtinMarshalerResolver) Resolve(host component.Host) (GenericMarshaler, error) {
+func (r *builtinMarshalerResolver) Resolve(_ component.Host) (GenericMarshaler, error) {
 	return r.genericMarshaler, nil
 }
 

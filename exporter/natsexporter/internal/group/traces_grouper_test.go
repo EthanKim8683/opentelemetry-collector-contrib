@@ -76,9 +76,8 @@ func groupTraces(t *testing.T, subject string, srcTraces ptrace.Traces) ([]Group
 					subject, err := constructSubject(destResourceSpans, destScopeSpans, destSpan)
 					if err == nil {
 						return subject != groupSubject
-					} else {
-						return true
 					}
+					return true
 				})
 				return destScopeSpans.Spans().Len() == 0
 			})

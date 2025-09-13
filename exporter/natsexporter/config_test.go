@@ -68,7 +68,7 @@ func createNkeyUserFile(t *testing.T, expirationDuration time.Duration) string {
 	userConfig, err := jwt.FormatUserConfig(userJWT, userSeed)
 	require.NoError(t, err)
 
-	userFile, err := os.CreateTemp("", "")
+	userFile, err := os.CreateTemp(t.TempDir(), "")
 	require.NoError(t, err)
 	userFilePath := userFile.Name()
 	t.Cleanup(func() {
@@ -157,7 +157,7 @@ func TestNkeyUserFileConfig(t *testing.T) {
 	})
 
 	t.Run("should return error for invalid user file", func(t *testing.T) {
-		userFile, err := os.CreateTemp("", "")
+		userFile, err := os.CreateTemp(t.TempDir(), "")
 		require.NoError(t, err)
 		userFilePath := userFile.Name()
 		t.Cleanup(func() {

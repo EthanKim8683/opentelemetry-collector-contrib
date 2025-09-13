@@ -76,9 +76,8 @@ func groupLogs(t *testing.T, subject string, srcLogs plog.Logs) ([]Group[plog.Lo
 					subject, err := constructSubject(destResourceLogs, destScopeLogs, destLogRecord)
 					if err == nil {
 						return subject != groupSubject
-					} else {
-						return true
 					}
+					return true
 				})
 				return destScopeLogs.LogRecords().Len() == 0
 			})
