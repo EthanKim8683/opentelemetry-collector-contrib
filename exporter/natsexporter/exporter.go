@@ -38,9 +38,7 @@ func newNatsExporter[T any](
 }
 
 func (e *natsExporter[T]) start(_ context.Context, host component.Host) error {
-	var errs error
-	errs = multierr.Append(errs, e.marshaler.Resolve(host))
-	return errs
+	return e.marshaler.Resolve(host)
 }
 
 func (e *natsExporter[T]) export(ctx context.Context, data T) error {

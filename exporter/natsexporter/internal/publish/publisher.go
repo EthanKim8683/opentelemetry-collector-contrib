@@ -10,6 +10,10 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
+func isConnected(nc *nats.Conn) bool {
+	return nc != nil && nc.IsConnected()
+}
+
 type Publisher interface {
 	Publish(ctx context.Context, subject string, data []byte) error
 	Disconnect() error
@@ -18,10 +22,6 @@ type Publisher interface {
 type CoreNatsPublisher struct {
 	natsOptions *NatsOptions
 	nc          *nats.Conn
-}
-
-func (p *CoreNatsPublisher) isConnected() bool {
-	return p.nc != nil && !p.nc.IsClosed()
 }
 
 func (p *CoreNatsPublisher) connect() error {
@@ -36,7 +36,7 @@ func (p *CoreNatsPublisher) connect() error {
 }
 
 func (p *CoreNatsPublisher) Publish(_ context.Context, subject string, data []byte) error {
-	if !p.isConnected() {
+	if !isConnected(p.nc) {
 		if err := p.connect(); err != nil {
 			return err
 		}
@@ -46,7 +46,7 @@ func (p *CoreNatsPublisher) Publish(_ context.Context, subject string, data []by
 }
 
 func (p *CoreNatsPublisher) Disconnect() error {
-	if p.isConnected() {
+	if isConnected(p.nc) {
 		if err := p.nc.Drain(); err != nil {
 			p.nc.Close()
 			return err
@@ -70,10 +70,6 @@ type JetStreamPublisher struct {
 	js               jetstream.JetStream
 }
 
-func (p *JetStreamPublisher) isConnected() bool {
-	return p.nc != nil && p.js != nil && !p.nc.IsClosed()
-}
-
 func (p *JetStreamPublisher) connect() error {
 	options := p.natsOptions.buildOptions()
 	nc, err := options.Connect()
@@ -92,7 +88,7 @@ func (p *JetStreamPublisher) connect() error {
 }
 
 func (p *JetStreamPublisher) Publish(ctx context.Context, subject string, data []byte) error {
-	if !p.isConnected() {
+	if !isConnected(p.nc) {
 		if err := p.connect(); err != nil {
 			return err
 		}
@@ -106,7 +102,7 @@ func (p *JetStreamPublisher) Publish(ctx context.Context, subject string, data [
 }
 
 func (p *JetStreamPublisher) Disconnect() error {
-	if p.isConnected() {
+	if isConnected(p.nc) {
 		if err := p.nc.Drain(); err != nil {
 			p.nc.Close()
 			return err
