@@ -86,7 +86,7 @@ func createNkeyUserFile(t *testing.T, expirationDuration time.Duration) string {
 func TestNkeyConfig(t *testing.T) {
 	t.Parallel()
 
-	t.Run("should return nil for valid config", func(t *testing.T) {
+	t.Run("returns nil for valid config", func(t *testing.T) {
 		_, seed := createNkey(t)
 
 		cfg := &NkeyConfig{
@@ -95,7 +95,7 @@ func TestNkeyConfig(t *testing.T) {
 		assert.NoError(t, cfg.Validate())
 	})
 
-	t.Run("should return error for invalid seed", func(t *testing.T) {
+	t.Run("returns error for invalid seed", func(t *testing.T) {
 		cfg := &NkeyConfig{
 			Seed: "invalid",
 		}
@@ -106,7 +106,7 @@ func TestNkeyConfig(t *testing.T) {
 func TestNkeyJWTConfig(t *testing.T) {
 	t.Parallel()
 
-	t.Run("should return nil for valid config", func(t *testing.T) {
+	t.Run("returns nil for valid config", func(t *testing.T) {
 		userJWT, userSeed := createNkeyJWT(t, 5*time.Minute)
 
 		cfg := &NkeyJWTConfig{
@@ -116,7 +116,7 @@ func TestNkeyJWTConfig(t *testing.T) {
 		assert.NoError(t, cfg.Validate())
 	})
 
-	t.Run("should return error for invalid JWT", func(t *testing.T) {
+	t.Run("returns error for invalid JWT", func(t *testing.T) {
 		_, userSeed := createNkeyJWT(t, 5*time.Minute)
 
 		cfg := &NkeyJWTConfig{
@@ -126,7 +126,7 @@ func TestNkeyJWTConfig(t *testing.T) {
 		assert.Error(t, cfg.Validate())
 	})
 
-	t.Run("should return error for invalid seed", func(t *testing.T) {
+	t.Run("returns error for invalid seed", func(t *testing.T) {
 		userJWT, _ := createNkeyJWT(t, 5*time.Minute)
 
 		cfg := &NkeyJWTConfig{
@@ -140,7 +140,7 @@ func TestNkeyJWTConfig(t *testing.T) {
 func TestNkeyUserFileConfig(t *testing.T) {
 	t.Parallel()
 
-	t.Run("should return nil for valid config", func(t *testing.T) {
+	t.Run("returns nil for valid config", func(t *testing.T) {
 		userFilePath := createNkeyUserFile(t, 5*time.Minute)
 
 		cfg := &NkeyUserFileConfig{
@@ -149,14 +149,14 @@ func TestNkeyUserFileConfig(t *testing.T) {
 		assert.NoError(t, cfg.Validate())
 	})
 
-	t.Run("should return error for non-existent user file", func(t *testing.T) {
+	t.Run("returns error for non-existent user file", func(t *testing.T) {
 		cfg := &NkeyUserFileConfig{
 			UserFilePath: "invalid",
 		}
 		assert.Error(t, cfg.Validate())
 	})
 
-	t.Run("should return error for invalid user file", func(t *testing.T) {
+	t.Run("returns error for invalid user file", func(t *testing.T) {
 		userFile, err := os.CreateTemp(t.TempDir(), "")
 		require.NoError(t, err)
 		userFilePath := userFile.Name()
@@ -174,12 +174,12 @@ func TestNkeyUserFileConfig(t *testing.T) {
 func TestAuthConfig(t *testing.T) {
 	t.Parallel()
 
-	t.Run("should return nil for valid config", func(t *testing.T) {
+	t.Run("returns nil for valid config", func(t *testing.T) {
 		cfg := &AuthConfig{}
 		assert.NoError(t, cfg.Validate())
 	})
 
-	t.Run("should return error for multiple NKey configs", func(t *testing.T) {
+	t.Run("returns error for multiple NKey configs", func(t *testing.T) {
 		_, seed := createNkey(t)
 		userJWT, userSeed := createNkeyJWT(t, 5*time.Minute)
 		userFilePath := createNkeyUserFile(t, 5*time.Minute)
@@ -203,28 +203,28 @@ func TestAuthConfig(t *testing.T) {
 func TestResolverConfig(t *testing.T) {
 	t.Parallel()
 
-	t.Run("should return nil for valid config", func(t *testing.T) {
+	t.Run("returns nil for valid config", func(t *testing.T) {
 		cfg := &ResolverConfig{
 			MarshalerName: marshal.OtlpProtoBuiltinMarshalerName,
 		}
 		assert.NoError(t, cfg.Validate())
 	})
 
-	t.Run("should return error for unsupported built-in marshaler name", func(t *testing.T) {
+	t.Run("returns error for unsupported built-in marshaler name", func(t *testing.T) {
 		cfg := &ResolverConfig{
 			MarshalerName: "unsupported",
 		}
 		assert.Error(t, cfg.Validate())
 	})
 
-	t.Run("should return error for invalid encoding extension name", func(t *testing.T) {
+	t.Run("returns error for invalid encoding extension name", func(t *testing.T) {
 		cfg := &ResolverConfig{
 			EncodingExtensionName: &[]string{"/"}[0],
 		}
 		assert.Error(t, cfg.Validate())
 	})
 
-	t.Run("should return nil for unsupported built-in marshaler name and valid encoding extension name", func(t *testing.T) {
+	t.Run("returns nil for unsupported built-in marshaler name and valid encoding extension name", func(t *testing.T) {
 		cfg := &ResolverConfig{
 			MarshalerName:         "unsupported",
 			EncodingExtensionName: &[]string{"extension"}[0],
@@ -236,7 +236,7 @@ func TestResolverConfig(t *testing.T) {
 func TestLogsConfig(t *testing.T) {
 	t.Parallel()
 
-	t.Run("should return nil for valid config", func(t *testing.T) {
+	t.Run("returns nil for valid config", func(t *testing.T) {
 		cfg := &LogsConfig{
 			Subject: "\"otel_logs\"",
 			ResolverConfig: ResolverConfig{
@@ -246,7 +246,7 @@ func TestLogsConfig(t *testing.T) {
 		assert.NoError(t, cfg.Validate())
 	})
 
-	t.Run("should return error for invalid subject", func(t *testing.T) {
+	t.Run("returns error for invalid subject", func(t *testing.T) {
 		cfg := &LogsConfig{
 			Subject: "invalid",
 			ResolverConfig: ResolverConfig{
@@ -260,7 +260,7 @@ func TestLogsConfig(t *testing.T) {
 func TestMetricsConfig(t *testing.T) {
 	t.Parallel()
 
-	t.Run("should return nil for valid config", func(t *testing.T) {
+	t.Run("returns nil for valid config", func(t *testing.T) {
 		cfg := &MetricsConfig{
 			Subject: "\"otel_metrics\"",
 			ResolverConfig: ResolverConfig{
@@ -270,7 +270,7 @@ func TestMetricsConfig(t *testing.T) {
 		assert.NoError(t, cfg.Validate())
 	})
 
-	t.Run("should return error for invalid subject", func(t *testing.T) {
+	t.Run("returns error for invalid subject", func(t *testing.T) {
 		cfg := &MetricsConfig{
 			Subject: "invalid",
 			ResolverConfig: ResolverConfig{
@@ -284,7 +284,7 @@ func TestMetricsConfig(t *testing.T) {
 func TestTracesConfig(t *testing.T) {
 	t.Parallel()
 
-	t.Run("should return nil for valid config", func(t *testing.T) {
+	t.Run("returns nil for valid config", func(t *testing.T) {
 		cfg := &TracesConfig{
 			Subject: "\"otel_traces\"",
 			ResolverConfig: ResolverConfig{
@@ -294,7 +294,7 @@ func TestTracesConfig(t *testing.T) {
 		assert.NoError(t, cfg.Validate())
 	})
 
-	t.Run("should return error for invalid subject", func(t *testing.T) {
+	t.Run("returns error for invalid subject", func(t *testing.T) {
 		cfg := &TracesConfig{
 			Subject: "invalid",
 			ResolverConfig: ResolverConfig{
