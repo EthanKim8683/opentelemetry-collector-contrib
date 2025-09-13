@@ -345,8 +345,12 @@ func TestLoadConfig(t *testing.T) {
 
 	wantCfg := &Config{
 		NatsConfig: NatsConfig{
-			Server:      "nats://localhost:1234",
-			Servers:     []string{},
+			Server: "nats://localhost:1234",
+			Servers: []string{
+				"nats://localhost:1235",
+				"nats://localhost:1236",
+				"nats://localhost:1237",
+			},
 			TLS:         configtls.NewDefaultClientConfig(),
 			Pedantic:    true,
 			Compression: true,

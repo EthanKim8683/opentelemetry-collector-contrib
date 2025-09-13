@@ -1,5 +1,10 @@
 nats:
   server: nats://localhost:1234
+  servers: [
+    "nats://localhost:1235",
+    "nats://localhost:1236",
+    "nats://localhost:1237",
+  ]
   tls:
   pedantic: true
   compression: true
