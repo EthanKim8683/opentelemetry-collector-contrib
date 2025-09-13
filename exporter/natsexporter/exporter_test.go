@@ -7,15 +7,18 @@ import (
 	"context"
 	"errors"
 	"math/rand/v2"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/exporter/exportertest"
 	"go.uber.org/multierr"
 
@@ -241,6 +244,62 @@ func TestNewResolver(t *testing.T) {
 
 		assert.IsType(t, wantResolver, haveResolver)
 	})
+}
+
+func TestNewNatsOptions(t *testing.T) {
+	t.Parallel()
+
+	_, seed := createNkey(t)
+	userJWT, userSeed := createNkeyJWT(t, 5*time.Minute)
+	userFilePath := createNkeyUserFile(t, 5*time.Minute)
+
+	cfg := &NatsConfig{
+		Endpoint:    "nats://localhost:4222",
+		TLS:         configtls.NewDefaultClientConfig(),
+		Pedantic:    true,
+		Compression: true,
+		AuthConfig: AuthConfig{
+			TokenConfig: &TokenConfig{
+				Token: "token",
+			},
+			UserConfig: &UserConfig{
+				Username: "user",
+				Password: "password",
+			},
+			NkeyConfig: &NkeyConfig{
+				Seed: string(seed),
+			},
+			NkeyJWTConfig: &NkeyJWTConfig{
+				UserJWT: userJWT,
+				Seed:    string(userSeed),
+			},
+			NkeyUserFileConfig: &NkeyUserFileConfig{
+				UserFilePath: userFilePath,
+			},
+		},
+	}
+
+	natsOptions, err := newNatsOptions(cfg)
+	assert.NoError(t, err)
+
+	value := reflect.ValueOf(*natsOptions)
+	assert.Equal(t, 9, value.FieldByName("setOptionFuncs").Len())
+}
+
+func TestNewJetStreamOptions(t *testing.T) {
+	t.Parallel()
+
+	cfg := &JetStreamConfig{
+		RetryWait:     &[]time.Duration{1 * time.Second}[0],
+		RetryAttempts: &[]int{10}[0],
+		StallWait:     &[]time.Duration{1 * time.Second}[0],
+		Deduplication: &[]bool{true}[0],
+	}
+
+	jetStreamOptions := newJetStreamOptions(cfg)
+
+	value := reflect.ValueOf(*jetStreamOptions)
+	assert.Equal(t, 4, value.FieldByName("buildPublishOptFuncs").Len())
 }
 
 func TestNewPublisher(t *testing.T) {

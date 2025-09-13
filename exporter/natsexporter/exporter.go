@@ -103,29 +103,29 @@ func newNatsOptions(cfg *NatsConfig) (*publish.NatsOptions, error) {
 	natsOptions.SetPedantic(cfg.Pedantic)
 	natsOptions.SetCompression(cfg.Compression)
 
-	if cfg.AuthConfig.Token != nil {
-		natsOptions.SetToken(cfg.AuthConfig.Token.Token)
+	if cfg.AuthConfig.TokenConfig != nil {
+		natsOptions.SetToken(cfg.AuthConfig.TokenConfig.Token)
 	}
-	if cfg.AuthConfig.User != nil {
+	if cfg.AuthConfig.UserConfig != nil {
 		natsOptions.SetUser(
-			cfg.AuthConfig.User.Username,
-			cfg.AuthConfig.User.Password,
+			cfg.AuthConfig.UserConfig.Username,
+			cfg.AuthConfig.UserConfig.Password,
 		)
 	}
-	if cfg.AuthConfig.Nkey != nil {
+	if cfg.AuthConfig.NkeyConfig != nil {
 		errs = multierr.Append(errs, natsOptions.SetNkey(
-			[]byte(cfg.AuthConfig.Nkey.Seed),
+			[]byte(cfg.AuthConfig.NkeyConfig.Seed),
 		))
 	}
-	if cfg.AuthConfig.NkeyJWT != nil {
+	if cfg.AuthConfig.NkeyJWTConfig != nil {
 		errs = multierr.Append(errs, natsOptions.SetNkeyJWT(
-			cfg.AuthConfig.NkeyJWT.JWT,
-			[]byte(cfg.AuthConfig.NkeyJWT.Seed),
+			cfg.AuthConfig.NkeyJWTConfig.UserJWT,
+			[]byte(cfg.AuthConfig.NkeyJWTConfig.Seed),
 		))
 	}
-	if cfg.AuthConfig.NkeyUserFile != nil {
+	if cfg.AuthConfig.NkeyUserFileConfig != nil {
 		errs = multierr.Append(errs, natsOptions.SetNkeyUserFile(
-			cfg.AuthConfig.NkeyUserFile.UserFilePath,
+			cfg.AuthConfig.NkeyUserFileConfig.UserFilePath,
 		))
 	}
 

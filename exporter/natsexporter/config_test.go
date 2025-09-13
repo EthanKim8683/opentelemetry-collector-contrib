@@ -110,8 +110,8 @@ func TestNkeyJWTConfig(t *testing.T) {
 		userJWT, userSeed := createNkeyJWT(t, 5*time.Minute)
 
 		cfg := &NkeyJWTConfig{
-			JWT:  userJWT,
-			Seed: string(userSeed),
+			UserJWT: userJWT,
+			Seed:    string(userSeed),
 		}
 		assert.NoError(t, cfg.Validate())
 	})
@@ -120,8 +120,8 @@ func TestNkeyJWTConfig(t *testing.T) {
 		_, userSeed := createNkeyJWT(t, 5*time.Minute)
 
 		cfg := &NkeyJWTConfig{
-			JWT:  "invalid",
-			Seed: string(userSeed),
+			UserJWT: "invalid",
+			Seed:    string(userSeed),
 		}
 		assert.Error(t, cfg.Validate())
 	})
@@ -130,8 +130,8 @@ func TestNkeyJWTConfig(t *testing.T) {
 		userJWT, _ := createNkeyJWT(t, 5*time.Minute)
 
 		cfg := &NkeyJWTConfig{
-			JWT:  userJWT,
-			Seed: "invalid",
+			UserJWT: userJWT,
+			Seed:    "invalid",
 		}
 		assert.Error(t, cfg.Validate())
 	})
@@ -185,14 +185,14 @@ func TestAuthConfig(t *testing.T) {
 		userFilePath := createNkeyUserFile(t, 5*time.Minute)
 
 		cfg := &AuthConfig{
-			Nkey: &NkeyConfig{
+			NkeyConfig: &NkeyConfig{
 				Seed: string(seed),
 			},
-			NkeyJWT: &NkeyJWTConfig{
-				JWT:  userJWT,
-				Seed: string(userSeed),
+			NkeyJWTConfig: &NkeyJWTConfig{
+				UserJWT: userJWT,
+				Seed:    string(userSeed),
 			},
-			NkeyUserFile: &NkeyUserFileConfig{
+			NkeyUserFileConfig: &NkeyUserFileConfig{
 				UserFilePath: userFilePath,
 			},
 		}
@@ -350,10 +350,10 @@ func TestLoadConfig(t *testing.T) {
 			Pedantic:    true,
 			Compression: true,
 			AuthConfig: AuthConfig{
-				Token: &TokenConfig{
+				TokenConfig: &TokenConfig{
 					Token: "token",
 				},
-				User: &UserConfig{
+				UserConfig: &UserConfig{
 					Username: "user",
 					Password: "password",
 				},

@@ -31,12 +31,12 @@ func validateNkeySeed(seed []byte) error {
 	return nil
 }
 
-func validateNkeyJWT(jwtString string) error {
+func validateNkeyJWT(userJWT string) error {
 	var errs error
 
-	if claims, err := jwt.Decode(jwtString); err != nil {
+	if claims, err := jwt.Decode(userJWT); err != nil {
 		errs = multierr.Append(errs,
-			fmt.Errorf("failed to decode NKey JWT: %w", err),
+			fmt.Errorf("failed to decode NKey user JWT: %w", err),
 		)
 	} else {
 		validationResults := jwt.CreateValidationResults()
@@ -44,7 +44,7 @@ func validateNkeyJWT(jwtString string) error {
 
 		if err := validationResults.Errors(); err != nil {
 			errs = multierr.Append(errs,
-				fmt.Errorf("failed to validate NKey JWT: %w", errors.Join(err...)),
+				fmt.Errorf("failed to validate NKey user JWT: %w", errors.Join(err...)),
 			)
 		}
 	}
@@ -64,7 +64,7 @@ func validateNkeyUserFile(userFilePath string) error {
 
 	if userJWT, err := jwt.ParseDecoratedJWT(userFile); err != nil {
 		errs = multierr.Append(errs,
-			fmt.Errorf("failed to parse NKey JWT from NKey user file: %w", err),
+			fmt.Errorf("failed to parse NKey user JWT from NKey user file: %w", err),
 		)
 	} else {
 		errs = multierr.Append(errs, validateNkeyJWT(userJWT))
@@ -97,13 +97,13 @@ func (c *NkeyConfig) Validate() error {
 }
 
 type NkeyJWTConfig struct {
-	JWT  string `mapstructure:"jwt"`
-	Seed string `mapstructure:"seed"`
+	UserJWT string `mapstructure:"user_jwt"`
+	Seed    string `mapstructure:"seed"`
 }
 
 func (c *NkeyJWTConfig) Validate() error {
 	var errs error
-	errs = multierr.Append(errs, validateNkeyJWT(c.JWT))
+	errs = multierr.Append(errs, validateNkeyJWT(c.UserJWT))
 	errs = multierr.Append(errs, validateNkeySeed([]byte(c.Seed)))
 	return errs
 }
@@ -117,30 +117,30 @@ func (c *NkeyUserFileConfig) Validate() error {
 }
 
 type AuthConfig struct {
-	Token        *TokenConfig        `mapstructure:"token"`
-	User         *UserConfig         `mapstructure:"user"`
-	Nkey         *NkeyConfig         `mapstructure:"nkey"`
-	NkeyJWT      *NkeyJWTConfig      `mapstructure:"nkey_jwt"`
-	NkeyUserFile *NkeyUserFileConfig `mapstructure:"nkey_user_file"`
+	TokenConfig        *TokenConfig        `mapstructure:"token"`
+	UserConfig         *UserConfig         `mapstructure:"user"`
+	NkeyConfig         *NkeyConfig         `mapstructure:"nkey"`
+	NkeyJWTConfig      *NkeyJWTConfig      `mapstructure:"nkey_jwt"`
+	NkeyUserFileConfig *NkeyUserFileConfig `mapstructure:"nkey_user_file"`
 }
 
 func (c *AuthConfig) Validate() error {
 	nkeyCount := 0
 	var errs error
 
-	if c.Nkey != nil {
+	if c.NkeyConfig != nil {
 		nkeyCount++
-		errs = multierr.Append(errs, c.Nkey.Validate())
+		errs = multierr.Append(errs, c.NkeyConfig.Validate())
 	}
 
-	if c.NkeyJWT != nil {
+	if c.NkeyJWTConfig != nil {
 		nkeyCount++
-		errs = multierr.Append(errs, c.NkeyJWT.Validate())
+		errs = multierr.Append(errs, c.NkeyJWTConfig.Validate())
 	}
 
-	if c.NkeyUserFile != nil {
+	if c.NkeyUserFileConfig != nil {
 		nkeyCount++
-		errs = multierr.Append(errs, c.NkeyUserFile.Validate())
+		errs = multierr.Append(errs, c.NkeyUserFileConfig.Validate())
 	}
 
 	if nkeyCount > 1 {
