@@ -134,6 +134,10 @@ func newNatsOptions(cfg *NatsConfig) (*publish.NatsOptions, error) {
 }
 
 func newJetStreamOptions(cfg *JetStreamConfig) *publish.JetStreamOptions {
+	if !cfg.Enabled {
+		return nil
+	}
+
 	var jetStreamOptions publish.JetStreamOptions
 	if cfg.RetryWait != nil {
 		jetStreamOptions.SetRetryWait(*cfg.RetryWait)
@@ -156,11 +160,10 @@ func newPublisher(natsCfg *NatsConfig, jetStreamCfg *JetStreamConfig) (publish.P
 	natsOptions, err := newNatsOptions(natsCfg)
 	errs = multierr.Append(errs, err)
 
-	var publisher publish.Publisher
-	if jetStreamCfg != nil {
-		jetStreamOptions := newJetStreamOptions(jetStreamCfg)
-		errs = multierr.Append(errs, err)
+	jetStreamOptions := newJetStreamOptions(jetStreamCfg)
 
+	var publisher publish.Publisher
+	if jetStreamOptions != nil {
 		publisher = publish.NewJetStreamPublisher(natsOptions, jetStreamOptions)
 	} else {
 		publisher = publish.NewCoreNatsPublisher(natsOptions)
@@ -183,7 +186,7 @@ func newNatsLogsExporter(set exporter.Settings, cfg *Config) (*natsExporter[plog
 
 	marshaler := marshal.NewMarshaler(resolver, marshal.PickMarshalLogs)
 
-	publisher, err := newPublisher(&cfg.NatsConfig, cfg.JetStreamConfig)
+	publisher, err := newPublisher(&cfg.NatsConfig, &cfg.JetStreamConfig)
 	errs = multierr.Append(errs, err)
 
 	if errs != nil {
@@ -203,7 +206,7 @@ func newNatsMetricsExporter(set exporter.Settings, cfg *Config) (*natsExporter[p
 
 	marshaler := marshal.NewMarshaler(resolver, marshal.PickMarshalMetrics)
 
-	publisher, err := newPublisher(&cfg.NatsConfig, cfg.JetStreamConfig)
+	publisher, err := newPublisher(&cfg.NatsConfig, &cfg.JetStreamConfig)
 	errs = multierr.Append(errs, err)
 
 	if errs != nil {
@@ -223,7 +226,7 @@ func newNatsTracesExporter(set exporter.Settings, cfg *Config) (*natsExporter[pt
 
 	marshaler := marshal.NewMarshaler(resolver, marshal.PickMarshalTraces)
 
-	publisher, err := newPublisher(&cfg.NatsConfig, cfg.JetStreamConfig)
+	publisher, err := newPublisher(&cfg.NatsConfig, &cfg.JetStreamConfig)
 	errs = multierr.Append(errs, err)
 
 	if errs != nil {

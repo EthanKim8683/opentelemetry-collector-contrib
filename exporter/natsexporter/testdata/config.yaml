@@ -21,6 +21,7 @@ nats:
     marshaler: "otlp_json"
     encoding_extension: "encoding"
   jetstream:
+    enabled: true
     retry_wait: 2s
     retry_attempts: 3
     stall_wait: 4s

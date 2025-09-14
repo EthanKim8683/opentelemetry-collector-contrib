@@ -53,6 +53,9 @@ func createDefaultConfig() component.Config {
 				MarshalerName: marshal.OtlpProtoBuiltinMarshalerName,
 			},
 		},
+		JetStreamConfig: JetStreamConfig{
+			Enabled: false,
+		},
 		QueueBatchConfig: exporterhelper.NewDefaultQueueConfig(),
 	}
 }

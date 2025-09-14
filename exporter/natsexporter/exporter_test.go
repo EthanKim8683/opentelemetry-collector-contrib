@@ -290,24 +290,43 @@ func TestNewNatsOptions(t *testing.T) {
 func TestNewJetStreamOptions(t *testing.T) {
 	t.Parallel()
 
-	cfg := &JetStreamConfig{
-		RetryWait:     &[]time.Duration{1 * time.Second}[0],
-		RetryAttempts: &[]int{10}[0],
-		StallWait:     &[]time.Duration{1 * time.Second}[0],
-		Deduplication: &[]bool{true}[0],
-	}
+	t.Run("enabled", func(t *testing.T) {
+		cfg := &JetStreamConfig{
+			Enabled:       true,
+			RetryWait:     &[]time.Duration{1 * time.Second}[0],
+			RetryAttempts: &[]int{10}[0],
+			StallWait:     &[]time.Duration{1 * time.Second}[0],
+			Deduplication: &[]bool{true}[0],
+		}
 
-	jetStreamOptions := newJetStreamOptions(cfg)
+		jetStreamOptions := newJetStreamOptions(cfg)
+		assert.NotNil(t, jetStreamOptions)
 
-	value := reflect.ValueOf(*jetStreamOptions)
-	assert.Equal(t, 4, value.FieldByName("buildPublishOptFuncs").Len())
+		value := reflect.ValueOf(*jetStreamOptions)
+		assert.Equal(t, 4, value.FieldByName("buildPublishOptFuncs").Len())
+	})
+
+	t.Run("disabled", func(t *testing.T) {
+		cfg := &JetStreamConfig{
+			Enabled:       false,
+			RetryWait:     &[]time.Duration{1 * time.Second}[0],
+			RetryAttempts: &[]int{10}[0],
+			StallWait:     &[]time.Duration{1 * time.Second}[0],
+			Deduplication: &[]bool{true}[0],
+		}
+
+		jetStreamOptions := newJetStreamOptions(cfg)
+		assert.Nil(t, jetStreamOptions)
+	})
 }
 
 func TestNewPublisher(t *testing.T) {
 	t.Parallel()
 
 	t.Run("CoreNatsPublisher", func(t *testing.T) {
-		havePublisher, err := newPublisher(&NatsConfig{}, nil)
+		havePublisher, err := newPublisher(&NatsConfig{}, &JetStreamConfig{
+			Enabled: false,
+		})
 		assert.NoError(t, err)
 
 		wantPublisher := publish.NewCoreNatsPublisher(&publish.NatsOptions{})
@@ -316,7 +335,9 @@ func TestNewPublisher(t *testing.T) {
 	})
 
 	t.Run("JetStreamPublisher", func(t *testing.T) {
-		havePublisher, err := newPublisher(&NatsConfig{}, &JetStreamConfig{})
+		havePublisher, err := newPublisher(&NatsConfig{}, &JetStreamConfig{
+			Enabled: true,
+		})
 		assert.NoError(t, err)
 
 		wantPublisher := publish.NewJetStreamPublisher(&publish.NatsOptions{}, &publish.JetStreamOptions{})

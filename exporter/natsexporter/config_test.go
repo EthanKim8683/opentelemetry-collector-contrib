@@ -385,7 +385,8 @@ func TestLoadConfig(t *testing.T) {
 				EncodingExtensionName: &[]string{"encoding"}[0],
 			},
 		},
-		JetStreamConfig: &JetStreamConfig{
+		JetStreamConfig: JetStreamConfig{
+			Enabled:       true,
 			RetryWait:     &[]time.Duration{2 * time.Second}[0],
 			RetryAttempts: &[]int{3}[0],
 			StallWait:     &[]time.Duration{4 * time.Second}[0],

@@ -301,9 +301,9 @@ type NatsConfig struct {
 	Servers []string `mapstructure:"servers"`
 	// TLS is the TLS config.
 	TLS configtls.ClientConfig `mapstructure:"tls"`
-	// Pedantic is NATS pedantic mode flag.
+	// Pedantic enables NATS pedantic mode.
 	Pedantic bool `mapstructure:"pedantic"`
-	// Compression is NATS compression flag.
+	// Compression enables NATS compression.
 	Compression bool `mapstructure:"compression"`
 	// AuthConfig is the auth config.
 	AuthConfig AuthConfig `mapstructure:"auth"`
@@ -321,13 +321,15 @@ func (c *NatsConfig) Validate() error {
 
 // JetStreamConfig is the config for JetStream subsystem.
 type JetStreamConfig struct {
+	// Enabled enables JetStream.
+	Enabled bool `mapstructure:"enabled"`
 	// RetryWait is the retry wait duration passed to JetStream.
 	RetryWait *time.Duration `mapstructure:"retry_wait"`
 	// RetryAttempts is the retry attempts passed to JetStream.
 	RetryAttempts *int `mapstructure:"retry_attempts"`
 	// StallWait is the stall wait duration passed to JetStream.
 	StallWait *time.Duration `mapstructure:"stall_wait"`
-	// Deduplication is the deduplication flag.
+	// Deduplication enables message deduplication.
 	Deduplication *bool `mapstructure:"deduplication"`
 
 	// Prevent unkeyed literal initialization
@@ -345,7 +347,7 @@ type Config struct {
 	// TracesConfig is the traces exporter config.
 	TracesConfig TracesConfig `mapstructure:"traces"`
 	// JetStreamConfig is the JetStream config.
-	JetStreamConfig *JetStreamConfig `mapstructure:"jetstream"`
+	JetStreamConfig JetStreamConfig `mapstructure:"jetstream"`
 	// QueueBatchConfig is the queue batch config.
 	QueueBatchConfig exporterhelper.QueueBatchConfig `mapstructure:"sending_queue"`
 

@@ -50,6 +50,7 @@ The following configuration options are supported:
   - `nkey_user_file`: Configuration options for [decentralized NKey auth via user file](https://docs.nats.io/using-nats/developer/connecting/creds).
     - `user_file`: The path to the user file.
 - `jetstream`
+  - `enabled` (default = false)
   - `retry_wait` (default = 250ms): The duration to wait for before re-attempting to deliver a message
   - `retry_attempts` (default = 2): The number of delivery attempts allowed per publish
   - `stall_wait`: The duration to block for until the server is ready to accept messages. If unspecified, the exporter will wait for the server indefinitely.
