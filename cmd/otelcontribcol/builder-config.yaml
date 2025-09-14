@@ -95,6 +95,7 @@ exporters:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logicmonitorexporter v0.135.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logzioexporter v0.135.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/mezmoexporter v0.135.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/natsexporter v0.135.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opensearchexporter v0.135.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/otelarrowexporter v0.135.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.135.0

@@ -28,6 +28,9 @@ import (
 type TokenConfig struct {
 	// Token is the plaintext or bcrypt-hashed token.
 	Token string `mapstructure:"token"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 // UserConfig is the config for username/password auth.
@@ -36,12 +39,18 @@ type UserConfig struct {
 	Username string `mapstructure:"username"`
 	// Password is the plaintext or bcrypt-hashed password.
 	Password string `mapstructure:"password"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 // NkeyConfig is the config for NKey auth.
 type NkeyConfig struct {
 	// Seed is the NKey seed.
 	Seed string `mapstructure:"seed"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 func (c *NkeyConfig) Validate() error {
@@ -57,6 +66,9 @@ type NkeyJWTConfig struct {
 	UserJWT string `mapstructure:"user_jwt"`
 	// Seed is the NKey seed.
 	Seed string `mapstructure:"seed"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 func (c *NkeyJWTConfig) Validate() error {
@@ -81,6 +93,9 @@ func (c *NkeyJWTConfig) Validate() error {
 type NkeyUserFileConfig struct {
 	// UserFilePath is the path to the NKey user file.
 	UserFilePath string `mapstructure:"user_file"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 func (c *NkeyUserFileConfig) Validate() error {
@@ -118,6 +133,9 @@ type AuthConfig struct {
 	NkeyJWTConfig *NkeyJWTConfig `mapstructure:"nkey_jwt"`
 	// NkeyUserFileConfig is the NKey user file auth config.
 	NkeyUserFileConfig *NkeyUserFileConfig `mapstructure:"nkey_user_file"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 func (c *AuthConfig) Validate() error {
@@ -153,6 +171,9 @@ type ResolverConfig struct {
 	// EncodingExtensionName is the optional name of the encoding extension to
 	// resolve to. If set, MarshalerName is ignored.
 	EncodingExtensionName *string `mapstructure:"encoding_extension"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 func (c *ResolverConfig) Validate() error {
@@ -178,6 +199,9 @@ type LogsConfig struct {
 	Subject string `mapstructure:"subject"`
 	// ResolverConfig is the logs marshaler resolver config.
 	ResolverConfig ResolverConfig `mapstructure:",squash"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 func (c *LogsConfig) Validate() error {
@@ -208,6 +232,9 @@ type MetricsConfig struct {
 	Subject string `mapstructure:"subject"`
 	// ResolverConfig is the metrics marshaler resolver config.
 	ResolverConfig ResolverConfig `mapstructure:",squash"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 func (c *MetricsConfig) Validate() error {
@@ -238,6 +265,9 @@ type TracesConfig struct {
 	Subject string `mapstructure:"subject"`
 	// ResolverConfig is the traces marshaler resolver config.
 	ResolverConfig ResolverConfig `mapstructure:",squash"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 func (c *TracesConfig) Validate() error {
@@ -277,6 +307,9 @@ type NatsConfig struct {
 	Compression bool `mapstructure:"compression"`
 	// AuthConfig is the auth config.
 	AuthConfig AuthConfig `mapstructure:"auth"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 func (c *NatsConfig) Validate() error {
@@ -296,6 +329,9 @@ type JetStreamConfig struct {
 	StallWait *time.Duration `mapstructure:"stall_wait"`
 	// Deduplication is the deduplication flag.
 	Deduplication *bool `mapstructure:"deduplication"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 // Config is the config for the NATS exporter.
@@ -312,6 +348,9 @@ type Config struct {
 	JetStreamConfig *JetStreamConfig `mapstructure:"jetstream"`
 	// QueueBatchConfig is the queue batch config.
 	QueueBatchConfig exporterhelper.QueueBatchConfig `mapstructure:"sending_queue"`
+
+	// Prevent unkeyed literal initialization
+	_ struct{}
 }
 
 func (c *Config) Validate() error {

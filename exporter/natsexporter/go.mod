@@ -65,14 +65,14 @@ require (
 	github.com/twmb/murmur3 v1.1.8 // indirect
 	github.com/ua-parser/uap-go v0.0.0-20250326155420-f7f5a2f9f5bc // indirect
 	go.opentelemetry.io/auto/sdk v1.2.0 // indirect
-	go.opentelemetry.io/collector/client v1.41.0 // indirect
+	go.opentelemetry.io/collector/client v1.41.1-0.20250911155607-37a3ace6274c // indirect
 	go.opentelemetry.io/collector/config/configopaque v1.41.0 // indirect
 	go.opentelemetry.io/collector/config/configoptional v0.135.0 // indirect
 	go.opentelemetry.io/collector/config/configretry v1.41.0 // indirect
-	go.opentelemetry.io/collector/consumer v1.41.0 // indirect
-	go.opentelemetry.io/collector/consumer/consumererror v0.135.0 // indirect
-	go.opentelemetry.io/collector/consumer/consumertest v0.135.0 // indirect
-	go.opentelemetry.io/collector/consumer/xconsumer v0.135.0 // indirect
+	go.opentelemetry.io/collector/consumer v1.41.1-0.20250911155607-37a3ace6274c // indirect
+	go.opentelemetry.io/collector/consumer/consumererror v0.135.1-0.20250911155607-37a3ace6274c // indirect
+	go.opentelemetry.io/collector/consumer/consumertest v0.135.1-0.20250911155607-37a3ace6274c // indirect
+	go.opentelemetry.io/collector/consumer/xconsumer v0.135.1-0.20250911155607-37a3ace6274c // indirect
 	go.opentelemetry.io/collector/exporter/xexporter v0.135.0 // indirect
 	go.opentelemetry.io/collector/extension v1.41.0 // indirect
 	go.opentelemetry.io/collector/extension/xextension v0.135.0 // indirect
@@ -80,10 +80,10 @@ require (
 	go.opentelemetry.io/collector/internal/telemetry v0.135.1-0.20250911155607-37a3ace6274c // indirect
 	go.opentelemetry.io/collector/pdata/pprofile v0.135.1-0.20250911155607-37a3ace6274c // indirect
 	go.opentelemetry.io/collector/pdata/xpdata v0.135.0 // indirect
-	go.opentelemetry.io/collector/pipeline v1.41.0 // indirect
-	go.opentelemetry.io/collector/receiver v1.41.0 // indirect
-	go.opentelemetry.io/collector/receiver/receivertest v0.135.0 // indirect
-	go.opentelemetry.io/collector/receiver/xreceiver v0.135.0 // indirect
+	go.opentelemetry.io/collector/pipeline v1.41.1-0.20250911155607-37a3ace6274c // indirect
+	go.opentelemetry.io/collector/receiver v1.41.1-0.20250911155607-37a3ace6274c // indirect
+	go.opentelemetry.io/collector/receiver/receivertest v0.135.1-0.20250911155607-37a3ace6274c // indirect
+	go.opentelemetry.io/collector/receiver/xreceiver v0.135.1-0.20250911155607-37a3ace6274c // indirect
 	go.opentelemetry.io/contrib/bridges/otelzap v0.13.0 // indirect
 	go.opentelemetry.io/otel v1.38.0 // indirect
 	go.opentelemetry.io/otel/log v0.14.0 // indirect
@@ -106,3 +106,11 @@ require (
 )
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl => ../../pkg/ottl
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden => ../../pkg/golden
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil => ../../pkg/pdatautil
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal => ../../internal/coreinternal
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest => ../../pkg/pdatatest
